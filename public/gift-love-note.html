@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>A note for you 🌹</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=DM+Sans:wght@300;400;500;600&family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --night:      #06030A;
+      --night2:     #0D0514;
+      --rose:       #C8304A;
+      --rose-soft:  #E8557A;
+      --rose-pale:  #FFB3C6;
+      --gold:       #C9956B;
+      --gold-soft:  #E8C49A;
+      --cream:      #FDF6EE;
+      --cream-dim:  #E8D8C8;
+      --mauve:      #9A6070;
+      --mauve-dim:  #6A3A4A;
+      --purple:     #2D1040;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--night);
+      color: var(--cream);
+      font-family: 'DM Sans', sans-serif;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ═══════════════════════════════════════
+       AMBIENT BACKGROUND
+    ═══════════════════════════════════════ */
+    #ambient {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    /* deep purple-to-black vignette that pulses very slowly */
+    #ambient::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 0%,   rgba(80, 10, 60, 0.35) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(40, 5, 80, 0.2) 0%, transparent 70%);
+      animation: ambientBreath 8s ease-in-out infinite alternate;
+    }
+    @keyframes ambientBreath {
+      from { opacity: 0.7; }
+      to   { opacity: 1; }
+    }
+
+    /* floating petals */
+    .petal-float {
+      position: absolute;
+      font-size: 10px;
+      opacity: 0;
+      animation: petalDrift linear infinite;
+      pointer-events: none;
+      filter: blur(0.3px);
+    }
+    @keyframes petalDrift {
+      0%   { transform: translateY(105vh) rotate(0deg) scale(0.6);   opacity: 0; }
+      8%   { opacity: var(--op); }
+      92%  { opacity: var(--op); }
+      100% { transform: translateY(-8vh)  rotate(var(--spin)) scale(1.1); opacity: 0; }
+    }
+
+    /* ═══════════════════════════════════════
+       MAIN SCROLL CONTAINER
+    ═══════════════════════════════════════ */
+    #scroll-container {
+      position: relative;
+      z-index: 1;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ═══════════════════════════════════════
+       LOADING
+    ═══════════════════════════════════════ */
+    #loading {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--night);
+      transition: opacity 0.8s ease;
+    }
+    #loading.fade-out { opacity: 0; pointer-events: none; }
+    #loading.gone     { display: none; }
+
+    .loading-rose {
+      font-size: 2.2rem;
+      animation: roseBreath 1.6s ease-in-out infinite;
+      margin-bottom: 16px;
+    }
+    @keyframes roseBreath {
+      0%, 100% { transform: scale(1) rotate(-5deg); }
+      50%       { transform: scale(1.12) rotate(5deg); }
+    }
+    .loading-words {
+      font-size: 0.82rem;
+      color: var(--mauve);
+      letter-spacing: 0.1em;
+      font-weight: 300;
+    }
+
+    /* ═══════════════════════════════════════
+       ERROR
+    ═══════════════════════════════════════ */
+    #error-state {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 150;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+      padding: 40px;
+      background: var(--night);
+    }
+    #error-state.show { display: flex; }
+    .error-icon  { font-size: 3rem; margin-bottom: 20px; }
+    .error-head  { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-style: italic; color: var(--cream); margin-bottom: 10px; }
+    .error-body  { font-size: 0.88rem; color: var(--mauve); line-height: 1.7; max-width: 300px; }
+
+    /* ═══════════════════════════════════════
+       SECTION 1 — ROSE BLOOM HERO
+    ═══════════════════════════════════════ */
+    #section-rose {
+      width: 100%;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 24px 40px;
+      position: relative;
+    }
+
+    /* "for you" line above rose */
+    .for-you-line {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(0.95rem, 3vw, 1.15rem);
+      color: rgba(200, 140, 160, 0);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: clamp(28px, 6vw, 44px);
+      text-align: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* ── SVG ROSE ──────────────────────────── */
+    .rose-wrap {
+      position: relative;
+      width: clamp(160px, 44vw, 220px);
+      height: clamp(160px, 44vw, 220px);
+      margin-bottom: clamp(32px, 7vw, 52px);
+    }
+
+    /* soft glow behind the rose */
+    .rose-glow {
+      position: absolute;
+      inset: -40px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(200,48,74,0) 0%, transparent 70%);
+      transition: background 2s ease;
+      z-index: 0;
+    }
+
+    #rose-svg {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      z-index: 1;
+      overflow: visible;
+    }
+
+    /* Each petal path starts invisible and draws in */
+    .rose-petal {
+      opacity: 0;
+      transform-origin: 50% 85%;
+      transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transform: scale(0.3) rotate(var(--start-rot, 0deg));
+    }
+    .rose-petal.bloom {
+      opacity: 1;
+      transform: scale(1) rotate(0deg);
+    }
+
+    /* stem and leaves */
+    .rose-stem { opacity: 0; transition: opacity 1s ease; }
+    .rose-stem.show { opacity: 1; }
+
+    /* scroll hint below rose */
+    .scroll-hint {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      transition: opacity 1s ease;
+    }
+    .scroll-hint.show { opacity: 1; }
+    .scroll-hint-text {
+      font-size: 0.72rem;
+      color: var(--mauve);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 300;
+    }
+    .scroll-arrow {
+      width: 1px;
+      height: 32px;
+      background: linear-gradient(to bottom, var(--mauve), transparent);
+      animation: arrowPulse 2s ease-in-out infinite;
+    }
+    @keyframes arrowPulse {
+      0%, 100% { opacity: 0.4; transform: scaleY(1); }
+      50%       { opacity: 0.9; transform: scaleY(1.15); }
+    }
+
+    /* ═══════════════════════════════════════
+       DIVIDER — petal scatter
+    ═══════════════════════════════════════ */
+    .petal-divider {
+      width: 100%;
+      max-width: 520px;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin: 0 auto 0;
+      opacity: 0;
+      transition: opacity 1.2s ease;
+    }
+    .petal-divider.show { opacity: 1; }
+    .divider-line {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(200,48,74,0.25), transparent);
+    }
+    .divider-petals { font-size: 0.9rem; letter-spacing: 0.3em; color: var(--rose); opacity: 0.7; }
+
+    /* ═══════════════════════════════════════
+       SECTION 2 — THE NOTE
+    ═══════════════════════════════════════ */
+    #section-note {
+      width: 100%;
+      max-width: 560px;
+      padding: 48px 28px 32px;
+      margin: 0 auto;
+    }
+
+    /* receiver name */
+    .note-to {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(1rem, 3vw, 1.15rem);
+      color: rgba(200,140,160,0.75);
+      margin-bottom: 18px;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.9s ease, transform 0.9s ease;
+    }
+    .note-to.show { opacity: 1; transform: translateY(0); }
+
+    /* the message itself */
+    .note-message {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(1.3rem, 4.5vw, 1.7rem);
+      font-weight: 300;
+      color: var(--cream);
+      line-height: 1.8;
+      letter-spacing: 0.01em;
+      margin-bottom: 36px;
+      position: relative;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 1.2s ease 0.15s, transform 1.2s ease 0.15s;
+    }
+    .note-message.show { opacity: 1; transform: translateY(0); }
+
+    /* glowing left border */
+    .note-message::before {
+      content: '';
+      position: absolute;
+      left: -20px;
+      top: 6px; bottom: 6px;
+      width: 2px;
+      background: linear-gradient(to bottom, transparent, var(--rose), transparent);
+      border-radius: 2px;
+      opacity: 0.5;
+    }
+
+    /* signature */
+    .note-sig {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+      margin-bottom: 48px;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.9s ease 0.3s, transform 0.9s ease 0.3s;
+    }
+    .note-sig.show { opacity: 1; transform: translateY(0); }
+    .note-sig-label {
+      font-size: 0.72rem;
+      color: var(--mauve);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .note-sig-name {
+      font-family: 'Dancing Script', cursive;
+      font-size: clamp(1.7rem, 5.5vw, 2.4rem);
+      font-weight: 700;
+      color: var(--rose-soft);
+      line-height: 1.1;
+      filter: drop-shadow(0 0 14px rgba(200,48,74,0.35));
+    }
+
+    /* special date */
+    .note-date {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: rgba(200,140,160,0.65);
+      margin-bottom: 40px;
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      opacity: 0;
+      transition: opacity 0.9s ease 0.45s;
+    }
+    .note-date.show { opacity: 1; }
+    .note-date.visible { display: flex; }
+
+    /* ═══════════════════════════════════════
+       SHARE ROW
+    ═══════════════════════════════════════ */
+    .share-wrap {
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.9s ease 0.5s, transform 0.9s ease 0.5s;
+      margin-bottom: 48px;
+    }
+    .share-wrap.show { opacity: 1; transform: translateY(0); }
+
+    .share-label {
+      font-size: 0.7rem;
+      color: var(--mauve);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    .share-row {
+      display: flex;
+      gap: 9px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .share-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 500;
+      padding: 10px 18px;
+      border-radius: 100px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+      white-space: nowrap;
+    }
+    .share-btn:hover { transform: translateY(-2px); }
+    .btn-wa  { background: #25D366; color: #fff; box-shadow: 0 3px 14px rgba(37,211,102,0.28); }
+    .btn-ms  { background: #0078FF; color: #fff; box-shadow: 0 3px 14px rgba(0,120,255,0.28); }
+    .btn-cp  { background: rgba(253,246,238,0.08); color: var(--cream); border: 1px solid rgba(253,246,238,0.16); }
+
+    /* expiry */
+    .note-expiry {
+      text-align: center;
+      font-size: 0.7rem;
+      color: var(--mauve-dim);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 56px;
+      opacity: 0;
+      transition: opacity 0.8s ease 0.6s;
+    }
+    .note-expiry.show { opacity: 1; }
+    .exp-dot {
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: var(--rose);
+      animation: roseBreath 2.4s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+
+    /* ═══════════════════════════════════════
+       MARKETING FOOTER — the hook
+    ═══════════════════════════════════════ */
+    .marketing-footer {
+      width: 100%;
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 32px 28px 60px;
+      border-top: 1px solid rgba(200,48,74,0.1);
+      text-align: center;
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity 1s ease 0.7s, transform 1s ease 0.7s;
+    }
+    .marketing-footer.show { opacity: 1; transform: translateY(0); }
+
+    /* rose separator */
+    .mf-roses {
+      font-size: 1rem;
+      letter-spacing: 0.4em;
+      color: var(--rose);
+      opacity: 0.5;
+      margin-bottom: 20px;
+    }
+
+    .mf-question {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(1.05rem, 3.5vw, 1.3rem);
+      color: var(--cream-dim);
+      line-height: 1.55;
+      margin-bottom: 8px;
+    }
+
+    .mf-sub {
+      font-size: 0.8rem;
+      color: var(--mauve);
+      margin-bottom: 28px;
+      line-height: 1.6;
+      font-weight: 300;
+    }
+
+    /* the big CTA */
+    .mf-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      background: linear-gradient(135deg, var(--rose) 0%, #A8203A 100%);
+      color: #fff;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 600;
+      font-size: clamp(0.88rem, 2.8vw, 1rem);
+      padding: 15px 30px;
+      border-radius: 100px;
+      text-decoration: none;
+      box-shadow: 0 4px 24px rgba(200,48,74,0.4), 0 0 0 0 rgba(200,48,74,0.3);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      animation: ctaPulse 3s ease-in-out infinite;
+      margin-bottom: 16px;
+    }
+    .mf-cta:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 10px 36px rgba(200,48,74,0.5);
+      animation: none;
+    }
+    @keyframes ctaPulse {
+      0%, 100% { box-shadow: 0 4px 24px rgba(200,48,74,0.4), 0 0 0 0 rgba(200,48,74,0); }
+      50%       { box-shadow: 0 4px 24px rgba(200,48,74,0.4), 0 0 0 12px rgba(200,48,74,0); }
+    }
+    .mf-cta-icon { font-size: 1.1rem; }
+
+    /* the free badge */
+    .mf-free-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.72rem;
+      color: rgba(200, 190, 170, 0.5);
+      letter-spacing: 0.06em;
+    }
+    .mf-free-badge::before, .mf-free-badge::after {
+      content: '·';
+      opacity: 0.4;
+    }
+
+    /* example product pills */
+    .mf-products {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 24px;
+    }
+    .mf-product-pill {
+      font-size: 0.72rem;
+      color: var(--mauve);
+      background: rgba(154,96,112,0.1);
+      border: 1px solid rgba(154,96,112,0.18);
+      padding: 5px 12px;
+      border-radius: 100px;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+    .mf-product-pill:hover {
+      background: rgba(200,48,74,0.12);
+      border-color: rgba(200,48,74,0.25);
+      color: var(--rose-pale);
+    }
+
+    /* brand line */
+    .mf-brand {
+      margin-top: 32px;
+      font-size: 0.7rem;
+      color: rgba(154,96,112,0.35);
+      letter-spacing: 0.06em;
+    }
+    .mf-brand a { color: rgba(200,48,74,0.45); text-decoration: none; }
+    .mf-brand a:hover { color: var(--rose); }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- AMBIENT -->
+<div id="ambient"></div>
+
+<!-- LOADING -->
+<div id="loading">
+  <span class="loading-rose">🌹</span>
+  <div class="loading-words">Something beautiful is arriving...</div>
+</div>
+
+<!-- ERROR -->
+<div id="error-state">
+  <div class="error-icon">🥀</div>
+  <div class="error-head">This note has withered</div>
+  <p class="error-body">Love notes are made for fleeting moments. This one has faded — but someone out there is thinking of you.</p>
+</div>
+
+<!-- MAIN SCROLL -->
+<div id="scroll-container">
+
+  <!-- ── SECTION 1: ROSE ── -->
+  <section id="section-rose">
+
+    <div class="for-you-line" id="for-you-line">— for you —</div>
+
+    <div class="rose-wrap">
+      <div class="rose-glow" id="rose-glow"></div>
+
+      <!-- SVG Rose — drawn petal by petal via JS class toggling -->
+      <svg id="rose-svg" viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
+        <!-- stem -->
+        <g class="rose-stem" id="rose-stem">
+          <path d="M100 165 Q95 185 92 205" stroke="#2D5A27" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <!-- left leaf -->
+          <path d="M96 178 Q80 170 75 158 Q88 162 96 175Z" fill="#2D5A27" opacity="0.8"/>
+          <!-- right leaf -->
+          <path d="M96 188 Q112 180 118 168 Q104 173 97 186Z" fill="#2D5A27" opacity="0.7"/>
+        </g>
+
+        <!-- outer petals (5) -->
+        <path class="rose-petal" style="--start-rot:-30deg;" d="M100 155 Q60 140 55 105 Q70 85 100 90 Q130 85 145 105 Q140 140 100 155Z"
+          fill="url(#pOuter)" opacity="0.9"/>
+        <path class="rose-petal" style="--start-rot:40deg;" d="M100 155 Q65 148 52 118 Q58 92 82 85 Q100 80 100 90 Q70 88 58 110 Q67 140 100 153Z"
+          fill="url(#pOuter2)" opacity="0.85"/>
+        <path class="rose-petal" style="--start-rot:-40deg;" d="M100 155 Q135 148 148 118 Q142 92 118 85 Q100 80 100 90 Q130 88 142 110 Q133 140 100 153Z"
+          fill="url(#pOuter3)" opacity="0.85"/>
+        <path class="rose-petal" style="--start-rot:20deg;" d="M100 90 Q75 60 72 35 Q90 25 100 45 Q110 25 128 35 Q125 60 100 90Z"
+          fill="url(#pTop)" opacity="0.88"/>
+        <path class="rose-petal" style="--start-rot:-20deg;" d="M100 90 Q68 80 58 55 Q68 32 85 40 Q90 42 100 55 Q92 36 108 33 Q122 30 130 52 Q120 76 100 90Z"
+          fill="url(#pSide)" opacity="0.82"/>
+
+        <!-- mid petals (4) -->
+        <path class="rose-petal" style="--start-rot:15deg;" d="M100 130 Q72 118 68 95 Q78 78 100 82 Q122 78 132 95 Q128 118 100 130Z"
+          fill="url(#pMid)" opacity="0.9"/>
+        <path class="rose-petal" style="--start-rot:-25deg;" d="M100 130 Q74 125 65 105 Q72 85 90 80 Q100 78 100 85 Q78 82 72 103 Q80 122 100 128Z"
+          fill="url(#pMid2)" opacity="0.88"/>
+        <path class="rose-petal" style="--start-rot:25deg;" d="M100 130 Q126 125 135 105 Q128 85 110 80 Q100 78 100 85 Q122 82 128 103 Q120 122 100 128Z"
+          fill="url(#pMid3)" opacity="0.88"/>
+        <path class="rose-petal" style="--start-rot:0deg;" d="M100 82 Q82 60 80 40 Q92 32 100 50 Q108 32 120 40 Q118 60 100 82Z"
+          fill="url(#pMidTop)" opacity="0.85"/>
+
+        <!-- inner petals (3) -->
+        <path class="rose-petal" style="--start-rot:-10deg;" d="M100 110 Q82 100 80 85 Q88 74 100 76 Q112 74 120 85 Q118 100 100 110Z"
+          fill="url(#pInner)" opacity="0.92"/>
+        <path class="rose-petal" style="--start-rot:18deg;" d="M100 110 Q78 106 74 90 Q80 76 96 74 Q100 73 100 80 Q84 78 80 92 Q85 104 100 108Z"
+          fill="url(#pInner2)" opacity="0.9"/>
+        <path class="rose-petal" style="--start-rot:-18deg;" d="M100 110 Q122 106 126 90 Q120 76 104 74 Q100 73 100 80 Q116 78 120 92 Q115 104 100 108Z"
+          fill="url(#pInner3)" opacity="0.9"/>
+
+        <!-- heart centre -->
+        <path class="rose-petal" style="--start-rot:0deg;" d="M100 78 Q92 68 92 60 Q92 52 100 55 Q108 52 108 60 Q108 68 100 78Z"
+          fill="url(#pCentre)" opacity="0.95"/>
+
+        <!-- gradients -->
+        <defs>
+          <radialGradient id="pOuter"    cx="50%" cy="70%" r="55%"><stop offset="0%" stop-color="#E8507A"/><stop offset="100%" stop-color="#8B1F33"/></radialGradient>
+          <radialGradient id="pOuter2"   cx="50%" cy="70%" r="55%"><stop offset="0%" stop-color="#D84060"/><stop offset="100%" stop-color="#7A1830"/></radialGradient>
+          <radialGradient id="pOuter3"   cx="50%" cy="70%" r="55%"><stop offset="0%" stop-color="#D84060"/><stop offset="100%" stop-color="#7A1830"/></radialGradient>
+          <radialGradient id="pTop"      cx="50%" cy="80%" r="55%"><stop offset="0%" stop-color="#C83050"/><stop offset="100%" stop-color="#901828"/></radialGradient>
+          <radialGradient id="pSide"     cx="50%" cy="70%" r="55%"><stop offset="0%" stop-color="#BE2848"/><stop offset="100%" stop-color="#881828"/></radialGradient>
+          <radialGradient id="pMid"      cx="50%" cy="65%" r="55%"><stop offset="0%" stop-color="#E05878"/><stop offset="100%" stop-color="#A02840"/></radialGradient>
+          <radialGradient id="pMid2"     cx="50%" cy="65%" r="55%"><stop offset="0%" stop-color="#D84870"/><stop offset="100%" stop-color="#982038"/></radialGradient>
+          <radialGradient id="pMid3"     cx="50%" cy="65%" r="55%"><stop offset="0%" stop-color="#D84870"/><stop offset="100%" stop-color="#982038"/></radialGradient>
+          <radialGradient id="pMidTop"   cx="50%" cy="75%" r="55%"><stop offset="0%" stop-color="#C83058"/><stop offset="100%" stop-color="#901830"/></radialGradient>
+          <radialGradient id="pInner"    cx="50%" cy="60%" r="55%"><stop offset="0%" stop-color="#F06888"/><stop offset="100%" stop-color="#C03858"/></radialGradient>
+          <radialGradient id="pInner2"   cx="50%" cy="60%" r="55%"><stop offset="0%" stop-color="#E85878"/><stop offset="100%" stop-color="#B83050"/></radialGradient>
+          <radialGradient id="pInner3"   cx="50%" cy="60%" r="55%"><stop offset="0%" stop-color="#E85878"/><stop offset="100%" stop-color="#B83050"/></radialGradient>
+          <radialGradient id="pCentre"   cx="50%" cy="60%" r="55%"><stop offset="0%" stop-color="#FF8098"/><stop offset="100%" stop-color="#D04868"/></radialGradient>
+        </defs>
+      </svg>
+    </div>
+
+    <!-- scroll hint -->
+    <div class="scroll-hint" id="scroll-hint">
+      <span class="scroll-hint-text">scroll down</span>
+      <div class="scroll-arrow"></div>
+    </div>
+  </section>
+
+  <!-- petal divider -->
+  <div class="petal-divider" id="petal-divider">
+    <div class="divider-line"></div>
+    <div class="divider-petals">🌸 🌹 🌸</div>
+    <div class="divider-line"></div>
+  </div>
+
+  <!-- ── SECTION 2: THE NOTE ── -->
+  <section id="section-note">
+    <div class="note-to" id="note-to">For you,</div>
+
+    <div class="note-message" id="note-message">—</div>
+
+    <div class="note-sig" id="note-sig">
+      <span class="note-sig-label">always yours,</span>
+      <span class="note-sig-name" id="note-sig-name">—</span>
+    </div>
+
+    <div class="note-date visible" id="note-date">
+      <span>🌹</span>
+      <span id="note-date-text"></span>
+    </div>
+
+    <!-- share -->
+    <div class="share-wrap" id="share-wrap">
+      <div class="share-label">Share this note</div>
+      <div class="share-row">
+        <a class="share-btn btn-wa" id="btn-wa" href="#" target="_blank">📱 WhatsApp</a>
+        <a class="share-btn btn-ms" id="btn-ms" href="#" target="_blank">💬 Messenger</a>
+        <button class="share-btn btn-cp" id="btn-cp" onclick="copyLink()">📋 Copy link</button>
+      </div>
+    </div>
+
+    <div class="note-expiry" id="note-expiry">
+      <div class="exp-dot"></div>
+      <span id="expiry-text">This note disappears in 24 hours</span>
+    </div>
+  </section>
+
+  <!-- ── MARKETING FOOTER ── -->
+  <footer class="marketing-footer" id="marketing-footer">
+    <div class="mf-roses">🌹 · 🌹 · 🌹</div>
+
+    <p class="mf-question">Did this make you think of someone?</p>
+    <p class="mf-sub">Send them something just as beautiful.<br/>It takes two minutes. It costs less than a coffee.</p>
+
+    <a class="mf-cta" href="https://loversgift.io" target="_blank">
+      <span class="mf-cta-icon">💌</span>
+      Create a gift for someone you love
+    </a>
+
+    <div><span class="mf-free-badge">Free to start &nbsp;·&nbsp; No account needed &nbsp;·&nbsp; Sent in minutes</span></div>
+
+    <div class="mf-products">
+      <span class="mf-product-pill">💌 Love Letters</span>
+      <span class="mf-product-pill">🎂 Birthday Surprises</span>
+      <span class="mf-product-pill">💑 Relationship Timelines</span>
+      <span class="mf-product-pill">📬 Open When Letters</span>
+      <span class="mf-product-pill">🌹 Reasons I Love You</span>
+      <span class="mf-product-pill">🎵 Our Song Page</span>
+    </div>
+
+    <div class="mf-brand">
+      LoversGift · <a href="https://loversgift.io">loversgift.io</a>
+    </div>
+  </footer>
+
+</div><!-- /scroll-container -->
+
+<script>
+  // ─── CONFIG ────────────────────────────────────────────────────
+  const API_BASE       = 'https://your-app.railway.app'; // ← YOUR RAILWAY URL
+  const MARKETPLACE_URL = 'https://loversgift.io';        // ← YOUR SITE URL
+
+  // fix CTA href
+  document.querySelector('.mf-cta').href = MARKETPLACE_URL;
+  document.querySelector('.mf-brand a').href = MARKETPLACE_URL;
+
+  // ─── STATE ─────────────────────────────────────────────────────
+  let giftData = null;
+
+  // ─── AMBIENT FLOATING PETALS ───────────────────────────────────
+  (function() {
+    const amb = document.getElementById('ambient');
+    const EMOJIS = ['🌸','🌹','·','✦','♥','♡'];
+    const isMobile = window.innerWidth < 640;
+    const count = isMobile ? 12 : 22;
+
+    for (let i = 0; i < count; i++) {
+      const p  = document.createElement('div');
+      p.className = 'petal-float';
+      const dur = 20 + Math.random() * 18;
+      p.innerHTML = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+      p.style.cssText = `
+        left: ${Math.random() * 100}%;
+        font-size: ${8 + Math.random() * 10}px;
+        --op: ${0.05 + Math.random() * 0.12};
+        --spin: ${(Math.random() - 0.5) * 60}deg;
+        animation-duration: ${dur}s;
+        animation-delay: ${Math.random() * -dur}s;
+        color: ${['#C8304A','#9A6070','#C9956B','#FDF6EE'][Math.floor(Math.random()*4)]};
+      `;
+      amb.appendChild(p);
+    }
+  })();
+
+  // ─── ROSE BLOOM SEQUENCE ───────────────────────────────────────
+  // petals indexed outer → mid → inner → centre
+  const PETALS = [
+    // outer — big, first to appear
+    0, 1, 2, 3, 4,
+    // mid
+    5, 6, 7, 8,
+    // inner
+    9, 10, 11,
+    // centre
+    12,
+    // stem
+    'stem',
+  ];
+
+  function bloomRose() {
+    const petals = document.querySelectorAll('.rose-petal');
+    const glow   = document.getElementById('rose-glow');
+    const stem   = document.getElementById('rose-stem');
+
+    let glowIntensity = 0;
+
+    petals.forEach((petal, i) => {
+      setTimeout(() => {
+        petal.classList.add('bloom');
+
+        // intensify glow as more petals bloom
+        glowIntensity = Math.min(1, (i + 1) / petals.length);
+        const alpha = (0.08 + glowIntensity * 0.32).toFixed(2);
+        glow.style.background =
+          `radial-gradient(circle, rgba(200,48,74,${alpha}) 0%, transparent 70%)`;
+
+      }, 200 + i * 160 + Math.random() * 60);
+    });
+
+    // stem appears as rose blooms
+    setTimeout(() => stem.classList.add('show'), 400);
+
+    // after all petals, show scroll hint
+    const totalDelay = 200 + petals.length * 160 + 400;
+    setTimeout(() => {
+      document.getElementById('scroll-hint').classList.add('show');
+    }, totalDelay);
+  }
+
+  // ─── SCROLL-TRIGGERED REVEALS ──────────────────────────────────
+  function setupScrollObserver() {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (!e.isIntersecting) return;
+
+        const id = e.target.id;
+
+        if (id === 'petal-divider') {
+          e.target.classList.add('show');
+        }
+        if (id === 'note-to') {
+          e.target.classList.add('show');
+        }
+        if (id === 'note-message') {
+          setTimeout(() => e.target.classList.add('show'), 100);
+        }
+        if (id === 'note-sig') {
+          setTimeout(() => e.target.classList.add('show'), 200);
+        }
+        if (id === 'note-date') {
+          setTimeout(() => e.target.classList.add('show'), 300);
+        }
+        if (id === 'share-wrap') {
+          setTimeout(() => e.target.classList.add('show'), 100);
+        }
+        if (id === 'note-expiry') {
+          setTimeout(() => e.target.classList.add('show'), 200);
+        }
+        if (id === 'marketing-footer') {
+          setTimeout(() => e.target.classList.add('show'), 100);
+        }
+
+        io.unobserve(e.target);
+      });
+    }, { threshold: 0.15 });
+
+    [
+      'petal-divider','note-to','note-message','note-sig',
+      'note-date','share-wrap','note-expiry','marketing-footer',
+    ].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) io.observe(el);
+    });
+  }
+
+  // ─── POPULATE CONTENT ──────────────────────────────────────────
+  function populateNote(g) {
+    // "for you" line
+    const forYouEl = document.getElementById('for-you-line');
+    forYouEl.textContent = g.receiverName ? `— for ${g.receiverName} —` : '— for you —';
+    // fade in the for-you-line text (starts transparent in CSS)
+    setTimeout(() => {
+      forYouEl.style.transition = 'color 1.5s ease';
+      forYouEl.style.color = 'rgba(200,140,160,0.75)';
+    }, 200);
+
+    // receiver greeting
+    document.getElementById('note-to').textContent =
+      g.receiverName ? `For ${g.receiverName},` : 'For you,';
+
+    // message
+    document.getElementById('note-message').textContent = g.message || '';
+
+    // signature
+    document.getElementById('note-sig-name').textContent = g.senderName || '—';
+
+    // special date
+    if (g.specialDate) {
+      const d = new Date(g.specialDate + 'T12:00:00');
+      const fmt = d.toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+      document.getElementById('note-date-text').textContent = fmt;
+      document.getElementById('note-date').style.display = 'flex';
+    } else {
+      document.getElementById('note-date').style.display = 'none';
+    }
+
+    // share
+    const url   = g.shareUrl || window.location.href;
+    const waMsg = encodeURIComponent(`🌹 Someone sent you a love note → ${url}`);
+    document.getElementById('btn-wa').href = `https://wa.me/?text=${waMsg}`;
+    document.getElementById('btn-ms').href = `fb-messenger://share/?link=${encodeURIComponent(url)}`;
+
+    // expiry
+    setExpiryText(g.expiresAt);
+  }
+
+  // ─── EXPIRY COUNTDOWN ──────────────────────────────────────────
+  function setExpiryText(expiresAt) {
+    const el = document.getElementById('expiry-text');
+    if (!expiresAt || !el) return;
+    function update() {
+      const ms = new Date(expiresAt) - Date.now();
+      if (ms <= 0) { el.textContent = 'This note has faded'; return; }
+      const h = Math.floor(ms / 3600000);
+      const m = Math.floor((ms % 3600000) / 60000);
+      const s = Math.floor((ms % 60000)   / 1000);
+      if (h > 1)       el.textContent = `This note disappears in ${h}h ${m}m`;
+      else if (h === 1 || m > 0) el.textContent = `This note disappears in ${h}h ${m}m ${s}s`;
+      else             el.textContent = `This note disappears in ${m}m ${s}s`;
+    }
+    update();
+    setInterval(update, 1000);
+  }
+
+  // ─── COPY LINK ─────────────────────────────────────────────────
+  function copyLink() {
+    const link = giftData?.shareUrl || window.location.href;
+    navigator.clipboard.writeText(link).then(() => {
+      const btn  = document.getElementById('btn-cp');
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copied!';
+      btn.style.background = 'rgba(76,175,80,0.15)';
+      btn.style.color = '#81c784';
+      setTimeout(() => {
+        btn.textContent = orig;
+        btn.style.background = '';
+        btn.style.color = '';
+      }, 2500);
+    });
+  }
+
+  // ─── DEMO DATA ─────────────────────────────────────────────────
+  const DEMO_GIFT = {
+    receiverName: 'Sofia',
+    senderName:   'Marco',
+    message:      'I don\'t have the right words — I\'m not sure anyone does. But I wanted you to know that you are thought of, loved, and never far from my mind. This small note is just a way of saying: you matter to me, more than you probably know.',
+    specialDate:  null,
+    theme:        'rose',
+    expiresAt:    new Date(Date.now() + 23 * 3600 * 1000).toISOString(),
+    shareUrl:     window.location.href,
+  };
+
+  // ─── LOAD GIFT ─────────────────────────────────────────────────
+  async function loadGift() {
+    let code = '';
+    const parts = window.location.pathname.split('/');
+    const gIdx  = parts.indexOf('g');
+    if (gIdx !== -1 && parts[gIdx + 1]) {
+      code = parts[gIdx + 1];
+    } else {
+      code = new URLSearchParams(window.location.search).get('code') || '';
+    }
+
+    const useDemo = window.location.search.includes('demo');
+
+    if (!code && !useDemo) {
+      document.getElementById('loading').classList.add('gone');
+      document.getElementById('error-state').classList.add('show');
+      return;
+    }
+
+    try {
+      let data;
+      if (useDemo && !code) {
+        giftData = DEMO_GIFT;
+      } else {
+        const resp = await fetch(`${API_BASE}/api/gifts/${code}/view`);
+        data = await resp.json();
+        if (!resp.ok || data.expired || data.error) {
+          document.getElementById('loading').classList.add('gone');
+          document.getElementById('error-state').classList.add('show');
+          return;
+        }
+        giftData = data.gift;
+      }
+
+      // Populate content before showing
+      populateNote(giftData);
+
+      // Fade out loading
+      const loadEl = document.getElementById('loading');
+      loadEl.classList.add('fade-out');
+      setTimeout(() => {
+        loadEl.classList.add('gone');
+
+        // Start rose bloom sequence
+        setTimeout(bloomRose, 300);
+
+        // Setup scroll reveals
+        setupScrollObserver();
+
+      }, 800);
+
+    } catch (err) {
+      if (useDemo) {
+        giftData = DEMO_GIFT;
+        populateNote(giftData);
+        const loadEl = document.getElementById('loading');
+        loadEl.classList.add('fade-out');
+        setTimeout(() => {
+          loadEl.classList.add('gone');
+          setTimeout(bloomRose, 300);
+          setupScrollObserver();
+        }, 800);
+      } else {
+        document.getElementById('loading').classList.add('gone');
+        document.getElementById('error-state').classList.add('show');
+      }
+    }
+  }
+
+  // ─── INIT ──────────────────────────────────────────────────────
+  loadGift();
+</script>
+</body>
+</html>

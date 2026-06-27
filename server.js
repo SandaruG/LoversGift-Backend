@@ -33,10 +33,29 @@ app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 app.use('/gifts', express.static(path.join(__dirname, 'public', 'gifts')));
 
 // ── Gift view pages ────────────────────────────────────────────
-// GET /g/:code  → serves the animated love letter HTML
-// The page fetches its own data from /api/gifts/:code/view
-app.get('/g/:code', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'gift-letter.html'));
+// Each product slug maps to its own gift experience HTML file.
+// Add a new entry here each time you build a new product page.
+const PRODUCT_PAGE_MAP = {
+  'animated-love-letter':   'gift-letter.html',
+  'birthday-surprise-page': 'gift-birthday.html',
+  'simple-love-note':       'gift-love-note.html',
+  // coming soon — uncomment as you build each one:
+  // 'open-when-letters':      'gift-open-when.html',
+  // 'relationship-timeline':  'gift-timeline.html',
+  // 'reasons-i-love-you':    'gift-reasons.html',
+  // 'secret-gift-reveal':    'gift-reveal.html',
+  // 'our-song-page':         'gift-song.html',
+};
+
+app.get('/g/:code', (req, res) => {
+  const db   = getDb();
+  const row  = db.prepare(
+    'SELECT p.slug FROM gifts g LEFT JOIN products p ON p.id = g.product_id WHERE g.code = ?'
+  ).get(req.params.code);
+
+  const slug     = row?.slug || 'simple-love-note';
+  const filename = PRODUCT_PAGE_MAP[slug] || 'gift-love-note.html';
+  res.sendFile(path.join(__dirname, 'public', filename));
 });
 
 // ── Rate limiting ──────────────────────────────────────────────
