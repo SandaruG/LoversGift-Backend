@@ -610,7 +610,7 @@
         </div>
 
         <div class="lg-brand">
-          Created with <a href="https://loversgift.io">LoversGift</a> · Your romantic gift marketplace
+          Created with <a href="https://loversgift.netlify.app">LoversGift</a> · Your romantic gift marketplace
         </div>
       </div>
     </div>
@@ -620,14 +620,12 @@
   <script>
     // ─── CONFIG ────────────────────────────────────────────────────
     // Prefer a relative API base for same-origin deployments. Fall back to
-    // the known production host when running on a remote site.
+    // the current origin for deployment environments.
     const API_BASE = (function(){
       try {
         const host = window.location.hostname || '';
-        // If running on a development host or file://, keep relative path so
-        // local proxies or the demo fallback work.
         if (!host || host === 'localhost' || host === '127.0.0.1') return '';
-        return 'https://loversgift-backend-production.up.railway.app';
+        return window.location.origin;
       } catch (e) { return '' }
     })();
 
@@ -808,7 +806,7 @@
       setExpiryText(giftData.expiresAt);
 
       // Share URLs
-      const currentUrl = giftData.shareUrl || window.location.href;
+      const currentUrl = getCanonicalUrl(giftData.shareUrl || window.location.href);
       const waMsg = encodeURIComponent(`💌 Someone sent you a love letter → ${currentUrl}`);
       document.getElementById('btn-wa').href = `https://wa.me/?text=${waMsg}`;
       document.getElementById('btn-ms').href = `fb-messenger://share/?link=${encodeURIComponent(currentUrl)}`;
@@ -823,40 +821,42 @@
       });
     }
 
-    // ─── TYPEWRITER ────────────────────────────────────────────────
-    function startTyping(text) {
-      const target  = document.getElementById('typed-text');
-      const cursor  = document.getElementById('cursor');
-      const sigEl   = document.getElementById('letter-signature');
+        function getCanonicalUrl(url) {
+      if (!url) return window.location.href;
+      try {
+        return new URL(url, window.location.origin).href;
+      } catch (err) {
+        if (url.startsWith('//')) return `${window.location.protocol}${url}`;
+        if (!/^https?:\/\//i.test(url)) return `${window.location.protocol}//${url}`;
+        return url;
+      }
+    }
+
+    function startTyping(message) {
+      const target = document.getElementById('typed-text');
+      const cursor = document.getElementById('cursor');
+      const sigEl = document.getElementById('letter-signature');
       const badgeEl = document.getElementById('letter-date-badge');
       const footerEl = document.getElementById('letter-footer');
 
-      // Split into words for natural pacing
-      const words = text.split(' ');
+      if (!target) return;
+      target.textContent = '';
+      if (cursor) cursor.classList.add('typing');
+
+      const words = message ? message.split(' ') : [];
       let i = 0;
 
-      // Base delay between words — slightly variable for organic feel
       function typeNextWord() {
         if (i >= words.length) {
-          // Typing done
-          setTimeout(() => {
-            cursor.classList.add('hidden');
-
-            // Signature appears
-            sigEl.classList.add('show');
-
-            // Special date badge
-            if (giftData.specialDate) {
-              badgeEl.classList.add('show');
-            }
-
-            // Footer (share buttons + expiry)
+          if (cursor) cursor.classList.remove('typing');
+          if (sigEl) sigEl.classList.add('show');
+          if (giftData?.specialDate && badgeEl) badgeEl.classList.add('show');
+          if (footerEl) {
             setTimeout(() => {
               footerEl.classList.add('show');
               footerEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }, 600);
-
-          }, 300);
+          }
           return;
         }
 
@@ -864,19 +864,14 @@
         target.textContent += (i === 0 ? '' : ' ') + word;
         i++;
 
-        // Slight pause after punctuation for dramatic effect
         const hasPunctuation = /[.!?,;—]/.test(word);
-        const delay = hasPunctuation
-          ? 280 + Math.random() * 180
-          : 60  + Math.random() * 60;
-
+        const delay = hasPunctuation ? 280 + Math.random() * 180 : 60 + Math.random() * 60;
         setTimeout(typeNextWord, delay);
       }
 
       typeNextWord();
     }
-
-    // ─── EXPIRY COUNTDOWN ──────────────────────────────────────────
+// ─── EXPIRY COUNTDOWN ──────────────────────────────────────────
     function setExpiryText(expiresAt) {
       const el = document.getElementById('expiry-text');
       if (!expiresAt || !el) return;
@@ -906,7 +901,7 @@
 
     // ─── COPY LINK ─────────────────────────────────────────────────
     function copyLink() {
-      const link = giftData?.shareUrl || window.location.href;
+      const link = getCanonicalUrl(giftData?.shareUrl || window.location.href);
       navigator.clipboard.writeText(link).then(() => {
         const btn = document.getElementById('btn-copy');
         const orig = btn.textContent;
@@ -922,6 +917,7 @@
         }, 2500);
       }).catch(() => {
         // Fallback for older browsers
+        const link = getCanonicalUrl(giftData?.shareUrl || window.location.href);
         const ta = document.createElement('textarea');
         ta.value = link;
         ta.style.position = 'fixed';

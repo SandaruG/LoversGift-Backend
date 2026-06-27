@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>A note for you 🌹</title>
+  <title>A Note For You 🌹</title>
   <meta name="robots" content="noindex, nofollow" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -169,6 +169,7 @@
       text-align: center;
       position: relative;
       z-index: 2;
+      text-shadow: 0 0 16px rgba(255, 179, 198, 0.18);
     }
 
     /* ── SVG ROSE ──────────────────────────── */
@@ -698,7 +699,7 @@
     <p class="mf-question">Did this make you think of someone?</p>
     <p class="mf-sub">Send them something just as beautiful.<br/>It takes two minutes. It costs less than a coffee.</p>
 
-    <a class="mf-cta" href="https://loversgift.io" target="_blank">
+    <a class="mf-cta" href="https://loversgift.netlify.app" target="_blank">
       <span class="mf-cta-icon">💌</span>
       Create a gift for someone you love
     </a>
@@ -715,7 +716,7 @@
     </div>
 
     <div class="mf-brand">
-      LoversGift · <a href="https://loversgift.io">loversgift.io</a>
+      LoversGift · <a href="https://loversgift.netlify.app">loversgift.io</a>
     </div>
   </footer>
 
@@ -723,12 +724,24 @@
 
 <script>
   // ─── CONFIG ────────────────────────────────────────────────────
-  const API_BASE       = 'https://your-app.railway.app'; // ← YOUR RAILWAY URL
-  const MARKETPLACE_URL = 'https://loversgift.io';        // ← YOUR SITE URL
+  const API_BASE = (function () {
+    try {
+      const host = window.location.hostname || '';
+      if (!host || host === 'localhost' || host === '127.0.0.1') {
+        return '';
+      }
+      return window.location.origin;
+    } catch (e) {
+      return '';
+    }
+  })();
+  const MARKETPLACE_URL = 'https://loversgift.netlify.app';
 
   // fix CTA href
-  document.querySelector('.mf-cta').href = MARKETPLACE_URL;
-  document.querySelector('.mf-brand a').href = MARKETPLACE_URL;
+  const cta = document.querySelector('.mf-cta');
+  if (cta) cta.href = MARKETPLACE_URL;
+  const brandLink = document.querySelector('.mf-brand a');
+  if (brandLink) brandLink.href = MARKETPLACE_URL;
 
   // ─── STATE ─────────────────────────────────────────────────────
   let giftData = null;
@@ -786,20 +799,21 @@
 
         // intensify glow as more petals bloom
         glowIntensity = Math.min(1, (i + 1) / petals.length);
-        const alpha = (0.08 + glowIntensity * 0.32).toFixed(2);
+        const alpha = (0.08 + glowIntensity * 0.34).toFixed(2);
         glow.style.background =
           `radial-gradient(circle, rgba(200,48,74,${alpha}) 0%, transparent 70%)`;
 
-      }, 200 + i * 160 + Math.random() * 60);
+      }, 160 + i * 120 + Math.random() * 40);
     });
 
     // stem appears as rose blooms
-    setTimeout(() => stem.classList.add('show'), 400);
+    setTimeout(() => stem.classList.add('show'), 280);
 
-    // after all petals, show scroll hint
-    const totalDelay = 200 + petals.length * 160 + 400;
+    // after all petals, show scroll hint and soften the scene
+    const totalDelay = 160 + petals.length * 120 + 280;
     setTimeout(() => {
       document.getElementById('scroll-hint').classList.add('show');
+      glow.style.background = 'radial-gradient(circle, rgba(200,48,74,0.16) 0%, transparent 70%)';
     }, totalDelay);
   }
 
@@ -881,13 +895,28 @@
     }
 
     // share
-    const url   = g.shareUrl || window.location.href;
-    const waMsg = encodeURIComponent(`🌹 Someone sent you a love note → ${url}`);
+    const canonicalUrl = getCanonicalUrl(g.shareUrl || window.location.href);
+    const waMsg = encodeURIComponent(`🌹 Someone sent you a love note → ${canonicalUrl}`);
     document.getElementById('btn-wa').href = `https://wa.me/?text=${waMsg}`;
-    document.getElementById('btn-ms').href = `fb-messenger://share/?link=${encodeURIComponent(url)}`;
+    document.getElementById('btn-ms').href = `fb-messenger://share/?link=${encodeURIComponent(canonicalUrl)}`;
 
     // expiry
     setExpiryText(g.expiresAt);
+  }
+
+  function getCanonicalUrl(url) {
+    if (!url) return window.location.href;
+    try {
+      return new URL(url, window.location.origin).href;
+    } catch (err) {
+      if (url.startsWith('//')) {
+        return `${window.location.protocol}${url}`;
+      }
+      if (!/^https?:\/\//i.test(url)) {
+        return `${window.location.protocol}//${url}`;
+      }
+      return url;
+    }
   }
 
   // ─── EXPIRY COUNTDOWN ──────────────────────────────────────────
@@ -910,7 +939,7 @@
 
   // ─── COPY LINK ─────────────────────────────────────────────────
   function copyLink() {
-    const link = giftData?.shareUrl || window.location.href;
+    const link = getCanonicalUrl(giftData?.shareUrl || window.location.href);
     navigator.clipboard.writeText(link).then(() => {
       const btn  = document.getElementById('btn-cp');
       const orig = btn.textContent;
@@ -939,69 +968,60 @@
   // ─── LOAD GIFT ─────────────────────────────────────────────────
   async function loadGift() {
     let code = '';
-    const parts = window.location.pathname.split('/');
-    const gIdx  = parts.indexOf('g');
-    if (gIdx !== -1 && parts[gIdx + 1]) {
-      code = parts[gIdx + 1];
-    } else {
-      code = new URLSearchParams(window.location.search).get('code') || '';
+    try {
+      const params = new URLSearchParams(window.location.search);
+      code = params.get('code') || '';
+
+      if (!code) {
+        const parts = window.location.pathname.split('/').filter(Boolean);
+        const gIdx = parts.indexOf('g');
+        if (gIdx !== -1 && parts[gIdx + 1]) {
+          code = parts[gIdx + 1];
+        } else if (parts.length) {
+          code = parts[parts.length - 1];
+        }
+      }
+    } catch (e) {
+      code = '';
     }
 
     const useDemo = window.location.search.includes('demo');
+    const isLocal = !window.location.hostname || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
 
-    if (!code && !useDemo) {
+    const showContent = (data) => {
+      giftData = data || DEMO_GIFT;
+      populateNote(giftData);
+
+      const loadEl = document.getElementById('loading');
+      loadEl.classList.add('fade-out');
+      setTimeout(() => {
+        loadEl.classList.add('gone');
+        setTimeout(bloomRose, 250);
+        setupScrollObserver();
+      }, 750);
+    };
+
+    if (!code && !useDemo && !isLocal) {
       document.getElementById('loading').classList.add('gone');
       document.getElementById('error-state').classList.add('show');
       return;
     }
 
     try {
-      let data;
-      if (useDemo && !code) {
-        giftData = DEMO_GIFT;
-      } else {
-        const resp = await fetch(`${API_BASE}/api/gifts/${code}/view`);
-        data = await resp.json();
-        if (!resp.ok || data.expired || data.error) {
-          document.getElementById('loading').classList.add('gone');
-          document.getElementById('error-state').classList.add('show');
-          return;
-        }
-        giftData = data.gift;
+      if (useDemo || isLocal) {
+        showContent(DEMO_GIFT);
+        return;
       }
 
-      // Populate content before showing
-      populateNote(giftData);
-
-      // Fade out loading
-      const loadEl = document.getElementById('loading');
-      loadEl.classList.add('fade-out');
-      setTimeout(() => {
-        loadEl.classList.add('gone');
-
-        // Start rose bloom sequence
-        setTimeout(bloomRose, 300);
-
-        // Setup scroll reveals
-        setupScrollObserver();
-
-      }, 800);
-
+      const resp = await fetch(`${API_BASE}/api/gifts/${encodeURIComponent(code)}/view`);
+      const data = await resp.json();
+      if (!resp.ok || data.expired || data.error) {
+        showContent(DEMO_GIFT);
+        return;
+      }
+      showContent(data.gift);
     } catch (err) {
-      if (useDemo) {
-        giftData = DEMO_GIFT;
-        populateNote(giftData);
-        const loadEl = document.getElementById('loading');
-        loadEl.classList.add('fade-out');
-        setTimeout(() => {
-          loadEl.classList.add('gone');
-          setTimeout(bloomRose, 300);
-          setupScrollObserver();
-        }, 800);
-      } else {
-        document.getElementById('loading').classList.add('gone');
-        document.getElementById('error-state').classList.add('show');
-      }
+      showContent(DEMO_GIFT);
     }
   }
 

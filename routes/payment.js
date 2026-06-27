@@ -14,6 +14,17 @@ const axios   = require('axios');
 const { getDb } = require('../db/database');
 const { nanoid } = require('nanoid');
 
+function normalizeBaseUrl(url) {
+  let baseUrl = (url || '').trim();
+  if (!baseUrl) {
+    baseUrl = 'http://localhost:3000';
+  }
+  if (!/^https?:\/\//i.test(baseUrl)) {
+    baseUrl = `https://${baseUrl}`;
+  }
+  return baseUrl.replace(/\/+$/, '');
+}
+
 // ── PayPal API base URL ─────────────────────────────────────────
 // Sandbox (testing):   https://api-m.sandbox.paypal.com
 // Live (real money):   https://api-m.paypal.com
@@ -55,6 +66,7 @@ function activateGift(db, order) {
   const code      = nanoid(8);
   const expiryHrs = parseInt(process.env.GIFT_EXPIRY_HOURS) || 24;
   const expiresAt = new Date(Date.now() + expiryHrs * 60 * 60 * 1000).toISOString();
+  const baseUrl   = normalizeBaseUrl(process.env.BASE_URL || process.env.FRONTEND_URL);
 
   // Insert the gift row
   db.prepare(`
@@ -82,13 +94,13 @@ function activateGift(db, order) {
   return {
     code,
     expiresAt,
-    shareUrl: `${process.env.BASE_URL || 'http://localhost:3000'}/g/${code}`,
+    shareUrl: `${baseUrl}/g/${code}`,
   };
 }
 
 // ── Format gift link response ───────────────────────────────────
 function giftResponse(gift, product) {
-  const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+  const baseUrl = normalizeBaseUrl(process.env.BASE_URL || process.env.FRONTEND_URL);
   return {
     success:      true,
     giftCode:     gift.code,
@@ -177,8 +189,8 @@ router.post('/create-order', async (req, res) => {
               brand_name: 'LoversGift',
               landing_page: 'NO_PREFERENCE',
               user_action: 'PAY_NOW',
-              return_url: `${process.env.BASE_URL}/payment-success`,
-              cancel_url: `${process.env.BASE_URL}/payment-cancel`,
+              return_url: `${normalizeBaseUrl(process.env.BASE_URL || process.env.FRONTEND_URL)}/payment-success`,
+              cancel_url: `${normalizeBaseUrl(process.env.BASE_URL || process.env.FRONTEND_URL)}/payment-cancel`,
             },
           },
         },
@@ -352,7 +364,7 @@ router.get('/status/:orderRef', (req, res) => {
   if (order.status === 'paid' && order.gift_code) {
     const gift    = db.prepare('SELECT * FROM gifts WHERE code = ?').get(order.gift_code);
     const product = db.prepare('SELECT * FROM products WHERE id = ?').get(order.product_id);
-    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+    const baseUrl = normalizeBaseUrl(process.env.BASE_URL || process.env.FRONTEND_URL || 'http://localhost:3000');
     return res.json({
       status: 'paid',
       shareUrl:     `${baseUrl}/g/${order.gift_code}`,

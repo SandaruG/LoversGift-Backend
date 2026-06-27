@@ -13,6 +13,17 @@ const multer   = require('multer');
 const adminAuth = require('../middleware/adminAuth');
 const { getDb } = require('../db/database');
 
+function normalizeBaseUrl(url) {
+  let baseUrl = (url || '').trim();
+  if (!baseUrl) {
+    baseUrl = 'http://localhost:3000';
+  }
+  if (!/^https?:\/\//i.test(baseUrl)) {
+    baseUrl = `https://${baseUrl}`;
+  }
+  return baseUrl.replace(/\/+$/, '');
+}
+
 // ── Nanoid (CommonJS compat shim) ──────────────────────────────
 // nanoid v3 is CommonJS, v4+ is ESM only. We use v3 in package.json.
 const { nanoid } = require('nanoid');
@@ -45,7 +56,7 @@ function formatGift(row, db) {
     ? db.prepare('SELECT * FROM products WHERE id = ?').get(row.product_id)
     : null;
 
-  const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+  const baseUrl = normalizeBaseUrl(process.env.BASE_URL || process.env.FRONTEND_URL);
 
   return {
     id:           row.id,
