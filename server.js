@@ -1,116 +1,128 @@
 // server.js — LoversGift Backend
-// Run: node server.js  (or  npm start)
-
 require('dotenv').config();
 
-const express    = require('express');
-const cors       = require('cors');
-const path       = require('path');
-const rateLimit  = require('express-rate-limit');
+const express   = require('express');
+const cors      = require('cors');
+const path      = require('path');
+const rateLimit = require('express-rate-limit');
 
 const { getDb }           = require('./db/database');
 const { startCleanupJob } = require('./db/cleanup');
 const productsRouter      = require('./routes/products');
 const giftsRouter         = require('./routes/gifts');
+const paymentRouter       = require('./routes/payment');
 const adminAuth           = require('./middleware/adminAuth');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
-// ── Initialise database on startup ─────────────────────────────
+// ── Init DB ────────────────────────────────────────────────────
 getDb();
 
-// ── Middleware ─────────────────────────────────────────────────
+// ── CORS ───────────────────────────────────────────────────────
 app.use(cors({
-  // In production, change this to your actual frontend domain:
-  // e.g. 'https://loversgift.io' or your Netlify/GitHub Pages URL
   origin: process.env.FRONTEND_URL || '*',
   methods: ['GET', 'POST', 'PATCH', 'DELETE'],
 }));
+
+// ── Body parsers ───────────────────────────────────────────────
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
-// ── Serve uploaded photos as static files ──────────────────────
-// Photos are accessible at: GET /gifts/filename.jpg
+// ── Static: uploaded gift photos ───────────────────────────────
 app.use('/gifts', express.static(path.join(__dirname, 'public', 'gifts')));
 
-// ── Rate limiting (prevents abuse) ────────────────────────────
-const createGiftLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20,                   // max 20 gifts per 15 mins per IP
-  message: { error: 'Too many gifts created. Please try again in 15 minutes.' },
+// ── Gift view pages ────────────────────────────────────────────
+// GET /g/:code  → serves the animated love letter HTML
+// The page fetches its own data from /api/gifts/:code/view
+app.get('/g/:code', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'gift-letter.html'));
 });
+
+// ── Rate limiting ──────────────────────────────────────────────
 const generalLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 100,
   message: { error: 'Too many requests.' },
 });
+const paymentLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: { error: 'Too many payment attempts. Please try again in 15 minutes.' },
+});
+const freeLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: { error: 'Free gift limit reached. Please try again in an hour.' },
+});
 
 app.use('/api/', generalLimiter);
-app.use('/api/gifts', createGiftLimiter);
+app.use('/api/payment/create-order', paymentLimiter);
+app.use('/api/payment/capture',      paymentLimiter);
+app.use('/api/payment/free-gift',    freeLimiter);
 
 // ── API Routes ─────────────────────────────────────────────────
-
-// Products — public endpoints
 app.use('/api/products', productsRouter);
+app.use('/api/gifts',    giftsRouter);
+app.use('/api/payment',  paymentRouter);
 
-// Gifts — public endpoints
-app.use('/api/gifts', giftsRouter);
-
-// Admin — all protected by ADMIN_PASSWORD ──────────────────────
-// Products admin
+// ── Admin routes ───────────────────────────────────────────────
 app.post  ('/api/admin/products',     adminAuth, (req, res, next) => { req.url = '/'; next(); }, productsRouter);
-app.patch ('/api/admin/products/:id', adminAuth, (req, res, next) => { req.params; next(); },   productsRouter);
-app.delete('/api/admin/products/:id', adminAuth, (req, res, next) => { next(); },               productsRouter);
-
-// These admin sub-routes are handled inside the routers themselves
-// GET /api/admin/gifts  → giftsRouter handles /admin/all
-// GET /api/admin/stats  → giftsRouter handles /admin/stats
+app.patch ('/api/admin/products/:id', adminAuth, (req, res, next) => next(), productsRouter);
+app.delete('/api/admin/products/:id', adminAuth, (req, res, next) => next(), productsRouter);
 
 // ── Health check ───────────────────────────────────────────────
 app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', time: new Date().toISOString() });
+  const db = getDb();
+  const productCount = db.prepare('SELECT COUNT(*) as n FROM products WHERE active=1').get().n;
+  const activeGifts  = db.prepare("SELECT COUNT(*) as n FROM gifts WHERE expires_at > datetime('now')").get().n;
+  res.json({
+    status: 'ok',
+    time: new Date().toISOString(),
+    products: productCount,
+    activeGifts,
+    paypal: process.env.PAYPAL_ENV || 'sandbox',
+  });
 });
 
-// ── Root info ──────────────────────────────────────────────────
+// ── Root ───────────────────────────────────────────────────────
 app.get('/', (_req, res) => {
   res.json({
-    name: 'LoversGift API',
-    version: '1.0.0',
-    endpoints: {
-      products:    'GET /api/products',
-      product:     'GET /api/products/:slug',
-      createGift:  'POST /api/gifts',
-      viewGift:    'GET /api/gifts/:code',
-      openGift:    'GET /api/gifts/:code/view',
-      adminStats:  'GET /api/admin/stats  (requires admin password)',
-      adminGifts:  'GET /api/admin/gifts  (requires admin password)',
+    name: 'LoversGift API 💕',
+    version: '2.0.0',
+    routes: {
+      giftPage:       'GET  /g/:code  → animated love letter page',
+      products:       'GET  /api/products',
+      createOrder:    'POST /api/payment/create-order',
+      capturePayment: 'POST /api/payment/capture',
+      freeGift:       'POST /api/payment/free-gift',
+      viewGift:       'GET  /api/gifts/:code/view',
+      adminStats:     'GET  /api/gifts/admin/stats  (auth required)',
     },
   });
 });
 
-// ── 404 handler ────────────────────────────────────────────────
-app.use((_req, res) => {
-  res.status(404).json({ error: 'Route not found' });
-});
+// ── 404 ────────────────────────────────────────────────────────
+app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
 
-// ── Global error handler ───────────────────────────────────────
+// ── Global error ───────────────────────────────────────────────
 app.use((err, _req, res, _next) => {
-  console.error('❌ Unhandled error:', err.message);
+  console.error('❌', err.message);
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// ── Start server ───────────────────────────────────────────────
+// ── Start ──────────────────────────────────────────────────────
 app.listen(PORT, () => {
+  const env = process.env.PAYPAL_ENV || 'sandbox';
   console.log(`
-💕 LoversGift Backend running
-   ┌─────────────────────────────────────────┐
-   │  http://localhost:${PORT}                    │
-   │  Environment: ${process.env.NODE_ENV || 'development'}               │
-   └─────────────────────────────────────────┘
+💕 LoversGift Backend v2.0
+   ┌──────────────────────────────────────────┐
+   │  http://localhost:${PORT}                     │
+   │  Gift pages: /g/:code                    │
+   │  PayPal: ${env === 'live' ? '🟢 LIVE (real money)    ' : '🟡 SANDBOX (test mode) '}   │
+   │  DB: SQLite (loversgift.db)              │
+   └──────────────────────────────────────────┘
   `);
-
-  // Start the gift expiry cleanup job
   startCleanupJob();
 });
 

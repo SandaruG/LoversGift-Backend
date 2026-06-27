@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>A letter for you 💌</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500;1,600&family=DM+Sans:wght@300;400;500&family=Dancing+Script:wght@500;700&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --night:    #0D0508;
+      --night2:   #160A10;
+      --paper:    #FAF5ED;
+      --paper2:   #F4EDE0;
+      --ink:      #2C1810;
+      --ink-soft: #5C3828;
+      --rose:     #C8304A;
+      --rose-dim: #8B1F33;
+      --gold:     #C9956B;
+      --gold-dim: #9A6A44;
+      --mauve:    #9A6070;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--night);
+      color: var(--paper);
+      font-family: 'DM Sans', sans-serif;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── PARTICLES BG ─────────────────────── */
+    #particles {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0;
+      animation: particleDrift linear infinite;
+    }
+    @keyframes particleDrift {
+      0%   { transform: translateY(100vh) rotate(0deg);   opacity: 0; }
+      5%   { opacity: var(--op); }
+      95%  { opacity: var(--op); }
+      100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+    }
+
+    /* ─── SCENE WRAPPER ────────────────────── */
+    #scene {
+      position: relative;
+      z-index: 1;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 20px;
+    }
+
+    /* ─── LOADING STATE ────────────────────── */
+    #loading {
+      text-align: center;
+      opacity: 1;
+      transition: opacity 0.6s ease;
+    }
+    #loading.hidden { opacity: 0; pointer-events: none; }
+    .loading-heart {
+      font-size: 2.5rem;
+      animation: loadPulse 1.2s ease-in-out infinite;
+      display: block;
+      margin-bottom: 16px;
+    }
+    @keyframes loadPulse {
+      0%, 100% { transform: scale(1);    opacity: 0.6; }
+      50%       { transform: scale(1.18); opacity: 1;   }
+    }
+    .loading-text {
+      font-size: 0.9rem;
+      color: var(--mauve);
+      font-weight: 300;
+      letter-spacing: 0.06em;
+    }
+
+    /* ─── ERROR STATE ──────────────────────── */
+    #error-state {
+      display: none;
+      text-align: center;
+      max-width: 340px;
+    }
+    #error-state.show { display: block; }
+    .error-emoji { font-size: 3rem; margin-bottom: 16px; display: block; }
+    .error-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem;
+      font-weight: 500;
+      color: var(--paper);
+      margin-bottom: 10px;
+    }
+    .error-sub {
+      font-size: 0.9rem;
+      color: var(--mauve);
+      line-height: 1.6;
+      font-weight: 300;
+    }
+
+    /* ─── ENVELOPE ─────────────────────────── */
+    #envelope-scene {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100dvh;
+      width: 100%;
+    }
+    #envelope-scene.show { display: flex; }
+
+    .pre-open-label {
+      font-family: 'Dancing Script', cursive;
+      font-size: clamp(1.2rem, 4vw, 1.7rem);
+      color: var(--gold);
+      opacity: 0;
+      margin-bottom: 40px;
+      text-align: center;
+      animation: fadeUp 0.8s ease 0.4s forwards;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .envelope-wrap {
+      position: relative;
+      width: min(340px, 85vw);
+      cursor: pointer;
+      animation: envFloat ease-in-out 3s infinite;
+      filter: drop-shadow(0 20px 60px rgba(200, 48, 74, 0.3));
+    }
+    @keyframes envFloat {
+      0%, 100% { transform: translateY(0px); }
+      50%       { transform: translateY(-10px); }
+    }
+    .envelope-wrap.opening {
+      animation: none;
+      transform: scale(1.04);
+      transition: transform 0.4s ease;
+    }
+
+    /* envelope body */
+    .env-body {
+      width: 100%;
+      padding-top: 65%; /* aspect ratio */
+      position: relative;
+      background: linear-gradient(170deg, #3D0F20 0%, #1C0810 100%);
+      border-radius: 4px 4px 10px 10px;
+      border: 1px solid rgba(200,48,74,0.3);
+      overflow: hidden;
+    }
+
+    /* bottom flap crease lines */
+    .env-body::before {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 55%;
+      background:
+        linear-gradient(135deg, #2A0A18 50%, transparent 50%),
+        linear-gradient(225deg, #2A0A18 50%, transparent 50%);
+      background-size: 50% 100%;
+      background-position: left, right;
+      background-repeat: no-repeat;
+      opacity: 0.6;
+    }
+
+    /* wax seal */
+    .env-seal {
+      position: absolute;
+      bottom: 20%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 44px;
+      height: 44px;
+      background: radial-gradient(circle at 35% 35%, #E8486A, #8B1F33);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      box-shadow: 0 2px 12px rgba(200,48,74,0.5), inset 0 1px 2px rgba(255,255,255,0.15);
+      z-index: 2;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+    .opening .env-seal { transform: translateX(-50%) scale(0); opacity: 0; }
+
+    /* top lid */
+    .env-lid {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 55%;
+      transform-origin: top center;
+      transform-style: preserve-3d;
+      transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 3;
+    }
+    .env-lid-face {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(160deg, #2A0812 0%, #1C0810 100%);
+      clip-path: polygon(0 0, 50% 60%, 100% 0);
+      border-bottom: 1px solid rgba(200,48,74,0.2);
+    }
+    .opening .env-lid {
+      transform: perspective(800px) rotateX(-180deg);
+    }
+
+    /* paper peeking from envelope */
+    .env-paper-peek {
+      position: absolute;
+      bottom: 0; left: 8%; right: 8%;
+      height: 0;
+      background: var(--paper);
+      border-radius: 3px 3px 0 0;
+      transition: height 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transition-delay: 0.5s;
+      z-index: 1;
+    }
+    .opening .env-paper-peek {
+      height: 60%;
+    }
+
+    .tap-hint {
+      margin-top: 28px;
+      font-size: 0.8rem;
+      color: var(--mauve);
+      letter-spacing: 0.08em;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 1.4s forwards;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .tap-hint::before, .tap-hint::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(154,96,112,0.4));
+    }
+    .tap-hint::after {
+      background: linear-gradient(to left, transparent, rgba(154,96,112,0.4));
+    }
+
+    /* ─── LETTER SCENE ─────────────────────── */
+    #letter-scene {
+      display: none;
+      opacity: 0;
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 12px 16px 40px;
+      transition: opacity 0.6s ease;
+    }
+    #letter-scene.show   { display: block; }
+    #letter-scene.visible { opacity: 1; }
+
+    /* the paper card */
+    .letter-paper {
+      background: var(--paper);
+      border-radius: 2px;
+      padding: clamp(28px, 6vw, 52px) clamp(24px, 6vw, 48px) clamp(32px, 7vw, 60px);
+      position: relative;
+      box-shadow:
+        0 4px 6px rgba(0,0,0,0.3),
+        0 20px 60px rgba(0,0,0,0.5),
+        0 40px 100px rgba(0,0,0,0.3);
+      transform: translateY(0);
+      animation: paperLand 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    @keyframes paperLand {
+      from { transform: translateY(40px) scale(0.96); opacity: 0; }
+      to   { transform: translateY(0)    scale(1);    opacity: 1; }
+    }
+
+    /* ruled lines on paper */
+    .letter-paper::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 2px;
+      background-image: repeating-linear-gradient(
+        transparent,
+        transparent 31px,
+        rgba(44, 24, 16, 0.06) 31px,
+        rgba(44, 24, 16, 0.06) 32px
+      );
+      background-position: 0 60px;
+      pointer-events: none;
+    }
+
+    /* red margin line */
+    .letter-paper::after {
+      content: '';
+      position: absolute;
+      top: 0; bottom: 0;
+      left: clamp(52px, 12vw, 76px);
+      width: 1px;
+      background: rgba(200, 48, 74, 0.18);
+      pointer-events: none;
+    }
+
+    /* top decorative element */
+    .letter-header {
+      text-align: center;
+      margin-bottom: clamp(20px, 4vw, 32px);
+      padding-bottom: clamp(16px, 3vw, 24px);
+      border-bottom: 1px solid rgba(44,24,16,0.1);
+      position: relative;
+    }
+    .letter-rose {
+      font-size: 1.8rem;
+      display: block;
+      margin-bottom: 6px;
+      opacity: 0;
+      animation: roseIn 0.8s ease 0.2s forwards;
+    }
+    @keyframes roseIn {
+      from { transform: scale(0.5) rotate(-20deg); opacity: 0; }
+      to   { transform: scale(1) rotate(0deg);     opacity: 1; }
+    }
+    .letter-date-line {
+      font-size: 0.72rem;
+      color: var(--ink-soft);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      opacity: 0;
+      animation: fadeUp 0.6s ease 0.5s forwards;
+    }
+
+    /* salutation */
+    .letter-salutation {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: clamp(1.1rem, 3.5vw, 1.35rem);
+      color: var(--ink);
+      margin-bottom: clamp(16px, 3vw, 22px);
+      opacity: 0;
+      animation: fadeUp 0.7s ease 0.3s forwards;
+    }
+
+    /* body text container */
+    .letter-body {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: clamp(1rem, 2.8vw, 1.15rem);
+      color: var(--ink);
+      line-height: 2;         /* matches the ruled lines */
+      min-height: 96px;
+      position: relative;
+    }
+
+    /* the cursor that appears while typing */
+    .type-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 1.1em;
+      background: var(--rose);
+      margin-left: 2px;
+      vertical-align: text-bottom;
+      animation: blink 0.9s step-end infinite;
+      border-radius: 1px;
+    }
+    .type-cursor.hidden { display: none; }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0; }
+    }
+
+    /* signature */
+    .letter-signature {
+      margin-top: clamp(28px, 5vw, 40px);
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-end;
+      flex-direction: column;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+    }
+    .letter-signature.show { opacity: 1; }
+    .sig-with-love {
+      font-size: 0.75rem;
+      color: var(--ink-soft);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .sig-name {
+      font-family: 'Dancing Script', cursive;
+      font-size: clamp(1.6rem, 5vw, 2.2rem);
+      font-weight: 700;
+      color: var(--rose);
+      line-height: 1;
+      filter: drop-shadow(0 2px 8px rgba(200,48,74,0.3));
+    }
+
+    /* special date badge */
+    .letter-date-badge {
+      margin-top: clamp(20px, 4vw, 28px);
+      text-align: center;
+      opacity: 0;
+      transition: opacity 0.8s ease 0.4s;
+    }
+    .letter-date-badge.show { opacity: 1; }
+    .date-badge-inner {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.78rem;
+      color: var(--ink-soft);
+      background: rgba(44,24,16,0.06);
+      padding: 7px 16px;
+      border-radius: 100px;
+      border: 1px solid rgba(44,24,16,0.1);
+    }
+
+    /* ─── FOOTER (below paper) ─────────────── */
+    .letter-footer {
+      text-align: center;
+      margin-top: 36px;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+    }
+    .letter-footer.show { opacity: 1; }
+
+    /* expiry pill */
+    .expiry-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.72rem;
+      color: var(--mauve);
+      background: rgba(154,96,112,0.12);
+      padding: 6px 14px;
+      border-radius: 100px;
+      border: 1px solid rgba(154,96,112,0.2);
+      margin-bottom: 20px;
+    }
+    .expiry-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--rose);
+      animation: loadPulse 2s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+
+    /* share row */
+    .share-row {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .share-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 500;
+      padding: 11px 20px;
+      border-radius: 100px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+    .share-btn:hover { transform: translateY(-2px); }
+
+    .btn-whatsapp {
+      background: #25D366;
+      color: white;
+      box-shadow: 0 4px 16px rgba(37,211,102,0.3);
+    }
+    .btn-whatsapp:hover { box-shadow: 0 8px 24px rgba(37,211,102,0.45); }
+
+    .btn-copy {
+      background: rgba(250,245,237,0.1);
+      color: var(--paper);
+      border: 1px solid rgba(250,245,237,0.18);
+    }
+    .btn-copy:hover { background: rgba(250,245,237,0.16); }
+
+    .btn-messenger {
+      background: #0078FF;
+      color: white;
+      box-shadow: 0 4px 16px rgba(0,120,255,0.3);
+    }
+    .btn-messenger:hover { box-shadow: 0 8px 24px rgba(0,120,255,0.45); }
+
+    /* branding */
+    .lg-brand {
+      margin-top: 28px;
+      font-size: 0.72rem;
+      color: rgba(154,96,112,0.45);
+      letter-spacing: 0.06em;
+    }
+    .lg-brand a {
+      color: rgba(200,48,74,0.5);
+      text-decoration: none;
+    }
+    .lg-brand a:hover { color: var(--rose); }
+
+    /* ─── REDUCED MOTION ───────────────────── */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ambient particles -->
+  <div id="particles"></div>
+
+  <div id="scene">
+
+    <!-- Loading -->
+    <div id="loading">
+      <span class="loading-heart">💌</span>
+      <div class="loading-text">Opening your letter...</div>
+    </div>
+
+    <!-- Error -->
+    <div id="error-state">
+      <span class="error-emoji">💔</span>
+      <div class="error-title">This letter has faded</div>
+      <p class="error-sub">Love letters are meant for a moment.<br/>This one has expired or the link is incorrect.<br/><br/>Perhaps someone is waiting to send you a new one.</p>
+    </div>
+
+    <!-- Envelope scene -->
+    <div id="envelope-scene">
+      <div class="pre-open-label" id="pre-open-label">A letter is waiting for you</div>
+
+      <div class="envelope-wrap" id="envelope" onclick="openEnvelope()">
+        <div class="env-body">
+          <div class="env-lid">
+            <div class="env-lid-face"></div>
+          </div>
+          <div class="env-seal">💌</div>
+          <div class="env-paper-peek"></div>
+        </div>
+      </div>
+
+      <div class="tap-hint">tap to open</div>
+    </div>
+
+    <!-- Letter scene -->
+    <div id="letter-scene">
+      <div class="letter-paper">
+        <div class="letter-header">
+          <span class="letter-rose">🌹</span>
+          <div class="letter-date-line" id="letter-today-date"></div>
+        </div>
+
+        <div class="letter-salutation" id="letter-salutation">My dearest,</div>
+
+        <div class="letter-body" id="letter-body">
+          <span id="typed-text"></span><span class="type-cursor" id="cursor"></span>
+        </div>
+
+        <div class="letter-signature" id="letter-signature">
+          <span class="sig-with-love">With all my love,</span>
+          <span class="sig-name" id="sig-name">—</span>
+        </div>
+
+        <div class="letter-date-badge" id="letter-date-badge" style="display:none;">
+          <div class="date-badge-inner">
+            <span>🗓️</span>
+            <span id="letter-special-date"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="letter-footer" id="letter-footer">
+        <div class="expiry-pill">
+          <div class="expiry-dot"></div>
+          <span id="expiry-text">This letter expires in 24 hours</span>
+        </div>
+
+        <div class="share-row" id="share-row">
+          <a class="share-btn btn-whatsapp" id="btn-wa" href="#" target="_blank">
+            📱 Share via WhatsApp
+          </a>
+          <a class="share-btn btn-messenger" id="btn-ms" href="#" target="_blank">
+            💬 Messenger
+          </a>
+          <button class="share-btn btn-copy" id="btn-copy" onclick="copyLink()">
+            📋 Copy link
+          </button>
+        </div>
+
+        <div class="lg-brand">
+          Created with <a href="https://loversgift.io">LoversGift</a> · Your romantic gift marketplace
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /scene -->
+
+  <script>
+    // ─── CONFIG ────────────────────────────────────────────────────
+    // Prefer a relative API base for same-origin deployments. Fall back to
+    // the known production host when running on a remote site.
+    const API_BASE = (function(){
+      try {
+        const host = window.location.hostname || '';
+        // If running on a development host or file://, keep relative path so
+        // local proxies or the demo fallback work.
+        if (!host || host === 'localhost' || host === '127.0.0.1') return '';
+        return 'https://loversgift-backend-production.up.railway.app';
+      } catch (e) { return '' }
+    })();
+
+    // ─── STATE ─────────────────────────────────────────────────────
+    let giftData    = null;
+    let shareUrl    = window.location.href;
+
+    // ─── PARTICLES ─────────────────────────────────────────────────
+    (function spawnParticles() {
+      const container = document.getElementById('particles');
+      const COLORS = ['#C8304A','#9A6070','#C9956B','#FAF5ED'];
+      const EMOJIS = ['♥','♡','✦','·'];
+      const isMobile = window.innerWidth < 640;
+      const count = isMobile ? 18 : 32;
+
+      for (let i = 0; i < count; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        const size  = 2 + Math.random() * 4;
+        const emoji = Math.random() > 0.65;
+        const left  = Math.random() * 100;
+        const dur   = 18 + Math.random() * 22;
+        const delay = Math.random() * -dur;
+        const op    = 0.08 + Math.random() * 0.18;
+
+        if (emoji) {
+          p.textContent = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+          p.style.cssText = `
+            left:${left}%;font-size:${6 + Math.random()*8}px;
+            color:${COLORS[Math.floor(Math.random()*COLORS.length)]};
+            --op:${op};animation-duration:${dur}s;animation-delay:${delay}s;
+          `;
+        } else {
+          p.style.cssText = `
+            left:${left}%;width:${size}px;height:${size}px;
+            background:${COLORS[Math.floor(Math.random()*COLORS.length)]};
+            --op:${op};animation-duration:${dur}s;animation-delay:${delay}s;
+          `;
+        }
+        container.appendChild(p);
+      }
+    })();
+
+    // ─── LOAD GIFT ─────────────────────────────────────────────────
+    async function loadGift() {
+      // Extract code from URL: /g/ABC123, last path segment, or ?code=ABC123
+      let code = '';
+      try {
+        const params = new URLSearchParams(window.location.search);
+        code = params.get('code') || '';
+
+        if (!code) {
+          const pathParts = window.location.pathname.split('/').filter(Boolean);
+          // look for a '/g/<code>' pattern first
+          const gIdx = pathParts.indexOf('g');
+          if (gIdx !== -1 && pathParts[gIdx + 1]) {
+            code = pathParts[gIdx + 1];
+          } else if (pathParts.length) {
+            // fallback to the last path segment (useful for pretty URLs)
+            code = pathParts[pathParts.length - 1];
+          }
+        }
+      } catch (e) {
+        code = '';
+      }
+
+      // If there's still no code, show error (unless demo requested)
+      if (!code) {
+        if (window.location.search.includes('demo')) {
+          giftData = DEMO_GIFT;
+          showEnvelope();
+          return;
+        }
+        showError();
+        return;
+      }
+
+      try {
+        const resp = await fetch(`${API_BASE}/api/gifts/${encodeURIComponent(code)}/view`);
+        const data = await resp.json();
+
+        if (!resp.ok || data.expired || data.error) {
+          showError();
+          return;
+        }
+
+        giftData = data.gift;
+        showEnvelope();
+      } catch (err) {
+        // If backend is unreachable and we're running locally/file://, use demo data
+        const isLocal = !window.location.hostname || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
+        if (isLocal || window.location.search.includes('demo')) {
+          giftData = DEMO_GIFT;
+          showEnvelope();
+        } else {
+          showError();
+        }
+      }
+    }
+
+    // ─── DEMO DATA (for local testing without backend) ─────────────
+    const DEMO_GIFT = {
+      receiverName: 'Sofia',
+      senderName:   'Marco',
+      message:      'Every time I see you, I forget everything else. You have this quiet way of making the world slow down, and I have never felt more at home than when I am standing next to you. I love you more than these words could ever say — but I wanted to try anyway.',
+      specialDate:  '2022-06-14',
+      theme:        'rose',
+      expiresAt:    new Date(Date.now() + 23 * 3600 * 1000).toISOString(),
+      shareUrl:     window.location.href,
+    };
+
+    // ─── SHOW / HIDE HELPERS ───────────────────────────────────────
+    function showError() {
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('error-state').classList.add('show');
+    }
+
+    function showEnvelope() {
+      document.getElementById('loading').classList.add('hidden');
+
+      // Set recipient name in pre-open label
+      const recipientEl = document.getElementById('pre-open-label');
+      if (giftData.receiverName) {
+        recipientEl.textContent = `A letter is waiting for you, ${giftData.receiverName}`;
+      }
+
+      const env = document.getElementById('envelope-scene');
+      env.classList.add('show');
+    }
+
+    // ─── OPEN ENVELOPE (user taps) ─────────────────────────────────
+    let envelopeOpened = false;
+    function openEnvelope() {
+      if (envelopeOpened) return;
+      envelopeOpened = true;
+
+      const envelope = document.getElementById('envelope');
+      envelope.classList.add('opening');
+
+      // After envelope animation, transition to letter
+      setTimeout(() => {
+        document.getElementById('envelope-scene').style.opacity = '0';
+        document.getElementById('envelope-scene').style.transition = 'opacity 0.5s ease';
+        setTimeout(() => {
+          document.getElementById('envelope-scene').style.display = 'none';
+          showLetter();
+        }, 500);
+      }, 1000);
+    }
+
+    // ─── SHOW LETTER ───────────────────────────────────────────────
+    function showLetter() {
+      const scene = document.getElementById('letter-scene');
+      scene.classList.add('show');
+
+      // Populate static fields
+      const today = new Date().toLocaleDateString('en-US', {
+        year: 'numeric', month: 'long', day: 'numeric'
+      });
+      document.getElementById('letter-today-date').textContent = today;
+
+      const salutation = giftData.receiverName
+        ? `My dearest ${giftData.receiverName},`
+        : 'My dearest,';
+      document.getElementById('letter-salutation').textContent = salutation;
+
+      document.getElementById('sig-name').textContent = giftData.senderName || '—';
+
+      // Special date
+      if (giftData.specialDate) {
+        const d = new Date(giftData.specialDate + 'T12:00:00');
+        const formatted = d.toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+        document.getElementById('letter-special-date').textContent = formatted;
+        document.getElementById('letter-date-badge').style.display = '';
+      }
+
+      // Expiry countdown
+      setExpiryText(giftData.expiresAt);
+
+      // Share URLs
+      const currentUrl = giftData.shareUrl || window.location.href;
+      const waMsg = encodeURIComponent(`💌 Someone sent you a love letter → ${currentUrl}`);
+      document.getElementById('btn-wa').href = `https://wa.me/?text=${waMsg}`;
+      document.getElementById('btn-ms').href = `fb-messenger://share/?link=${encodeURIComponent(currentUrl)}`;
+
+      // Fade in after paper lands
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          scene.classList.add('visible');
+          // Start typewriter after paper appears
+          setTimeout(() => startTyping(giftData.message || ''), 600);
+        }, 80);
+      });
+    }
+
+    // ─── TYPEWRITER ────────────────────────────────────────────────
+    function startTyping(text) {
+      const target  = document.getElementById('typed-text');
+      const cursor  = document.getElementById('cursor');
+      const sigEl   = document.getElementById('letter-signature');
+      const badgeEl = document.getElementById('letter-date-badge');
+      const footerEl = document.getElementById('letter-footer');
+
+      // Split into words for natural pacing
+      const words = text.split(' ');
+      let i = 0;
+
+      // Base delay between words — slightly variable for organic feel
+      function typeNextWord() {
+        if (i >= words.length) {
+          // Typing done
+          setTimeout(() => {
+            cursor.classList.add('hidden');
+
+            // Signature appears
+            sigEl.classList.add('show');
+
+            // Special date badge
+            if (giftData.specialDate) {
+              badgeEl.classList.add('show');
+            }
+
+            // Footer (share buttons + expiry)
+            setTimeout(() => {
+              footerEl.classList.add('show');
+              footerEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 600);
+
+          }, 300);
+          return;
+        }
+
+        const word = words[i];
+        target.textContent += (i === 0 ? '' : ' ') + word;
+        i++;
+
+        // Slight pause after punctuation for dramatic effect
+        const hasPunctuation = /[.!?,;—]/.test(word);
+        const delay = hasPunctuation
+          ? 280 + Math.random() * 180
+          : 60  + Math.random() * 60;
+
+        setTimeout(typeNextWord, delay);
+      }
+
+      typeNextWord();
+    }
+
+    // ─── EXPIRY COUNTDOWN ──────────────────────────────────────────
+    function setExpiryText(expiresAt) {
+      const el = document.getElementById('expiry-text');
+      if (!expiresAt || !el) return;
+
+      function update() {
+        const ms  = new Date(expiresAt) - Date.now();
+        if (ms <= 0) {
+          el.textContent = 'This letter has expired';
+          return;
+        }
+        const h = Math.floor(ms / 3600000);
+        const m = Math.floor((ms % 3600000) / 60000);
+        const s = Math.floor((ms % 60000) / 1000);
+
+        if (h > 1) {
+          el.textContent = `This letter expires in ${h}h ${m}m`;
+        } else if (h === 1 || m > 0) {
+          el.textContent = `This letter expires in ${h}h ${m}m ${s}s`;
+        } else {
+          el.textContent = `This letter expires in ${m}m ${s}s`;
+        }
+      }
+
+      update();
+      setInterval(update, 1000);
+    }
+
+    // ─── COPY LINK ─────────────────────────────────────────────────
+    function copyLink() {
+      const link = giftData?.shareUrl || window.location.href;
+      navigator.clipboard.writeText(link).then(() => {
+        const btn = document.getElementById('btn-copy');
+        const orig = btn.textContent;
+        btn.textContent = '✓ Copied!';
+        btn.style.background = 'rgba(76,175,80,0.2)';
+        btn.style.borderColor = 'rgba(76,175,80,0.4)';
+        btn.style.color = '#81c784';
+        setTimeout(() => {
+          btn.textContent = orig;
+          btn.style.background = '';
+          btn.style.borderColor = '';
+          btn.style.color = '';
+        }, 2500);
+      }).catch(() => {
+        // Fallback for older browsers
+        const ta = document.createElement('textarea');
+        ta.value = link;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      });
+    }
+
+    // ─── INIT ──────────────────────────────────────────────────────
+    loadGift();
+  </script>
+</body>
+</html>

@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Happy Birthday 🎂</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --night:   #070409;
+      --gold:    #F5C842;
+      --gold2:   #E8A020;
+      --gold3:   #C97A10;
+      --rose:    #D4386B;
+      --cream:   #FFF8E8;
+      --warm:    #FFE0A0;
+      --mauve:   #9A6070;
+      --smoke:   rgba(255,240,200,0.06);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--night);
+      color: var(--cream);
+      font-family: 'DM Sans', sans-serif;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* ─── CANVAS FOR CONFETTI ──────────────── */
+    #confetti-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    /* ─── SCENE SYSTEM ─────────────────────── */
+    .scene {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.7s ease;
+      overflow: hidden;
+    }
+    .scene.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    /* ─── LOADING SCENE ────────────────────── */
+    #scene-loading { background: var(--night); }
+    .loading-cake {
+      font-size: 2.5rem;
+      animation: cakePulse 1.4s ease-in-out infinite;
+      display: block;
+      margin-bottom: 14px;
+    }
+    @keyframes cakePulse {
+      0%, 100% { transform: scale(1); }
+      50%       { transform: scale(1.1); }
+    }
+    .loading-text {
+      font-size: 0.85rem;
+      color: var(--mauve);
+      letter-spacing: 0.08em;
+      font-weight: 300;
+    }
+
+    /* ─── ERROR SCENE ──────────────────────── */
+    #scene-error { background: var(--night); text-align: center; }
+    .error-emoji { font-size: 3rem; margin-bottom: 16px; display: block; }
+    .error-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem;
+      color: var(--cream);
+      margin-bottom: 10px;
+    }
+    .error-sub { font-size: 0.88rem; color: var(--mauve); line-height: 1.65; }
+
+    /* ─── SCENE 1: DARK ROOM — CANDLES LIT ONE BY ONE ─── */
+    #scene-candles {
+      background: var(--night);
+      flex-direction: column;
+      gap: 0;
+    }
+
+    /* ambient warm glow from the cake */
+    #scene-candles::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 500px;
+      height: 300px;
+      background: radial-gradient(ellipse at 50% 100%, rgba(245,200,66,0.12) 0%, transparent 70%);
+      pointer-events: none;
+      transition: opacity 1s ease;
+    }
+
+    /* "You have a birthday surprise" text */
+    .dark-room-label {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: clamp(1rem, 3.5vw, 1.35rem);
+      color: rgba(245,200,66,0.0);
+      margin-bottom: clamp(30px, 6vw, 50px);
+      text-align: center;
+      animation: goldFadeIn 1.2s ease 0.5s forwards;
+      letter-spacing: 0.02em;
+    }
+    @keyframes goldFadeIn {
+      to { color: rgba(245,200,66,0.75); }
+    }
+
+    /* ── CAKE ──────────────────────────────── */
+    .cake-wrap {
+      position: relative;
+      width: clamp(200px, 55vw, 280px);
+    }
+
+    /* cake tiers */
+    .cake-body {
+      position: relative;
+      width: 100%;
+    }
+    .cake-tier {
+      width: 100%;
+      border-radius: 6px 6px 4px 4px;
+      position: relative;
+    }
+    .cake-tier-top {
+      height: clamp(44px, 11vw, 60px);
+      background: linear-gradient(170deg, #8B1A4A 0%, #6B1238 100%);
+      border-radius: 8px 8px 0 0;
+      border: 1px solid rgba(200,48,100,0.4);
+      margin-bottom: -1px;
+    }
+    .cake-tier-mid {
+      height: clamp(52px, 13vw, 70px);
+      background: linear-gradient(170deg, #A01C50 0%, #7A1440 100%);
+      border: 1px solid rgba(200,48,100,0.3);
+      margin-bottom: -1px;
+    }
+    .cake-tier-bot {
+      height: clamp(58px, 14vw, 78px);
+      background: linear-gradient(170deg, #B82060 0%, #8A1848 100%);
+      border-radius: 0 0 10px 10px;
+      border: 1px solid rgba(200,48,100,0.3);
+    }
+
+    /* frosting drip on each tier */
+    .cake-tier-top::after,
+    .cake-tier-mid::after,
+    .cake-tier-bot::after {
+      content: '';
+      position: absolute;
+      top: -8px; left: 10%; right: 10%;
+      height: 14px;
+      background: radial-gradient(ellipse 12px 14px at 50% 100%, #FFF8E8 60%, transparent 100%);
+      background-size: 28px 14px;
+      background-repeat: repeat-x;
+    }
+
+    /* cake plate */
+    .cake-plate {
+      width: 115%;
+      height: 14px;
+      background: linear-gradient(to bottom, #2A1820, #1A0E14);
+      border-radius: 50%;
+      margin: 0 auto;
+      margin-left: -7.5%;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+    }
+
+    /* ── CANDLES ───────────────────────────── */
+    .candles-row {
+      position: absolute;
+      top: -28px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: clamp(8px, 2.5vw, 14px);
+      align-items: flex-end;
+    }
+
+    .candle {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    .candle-flame {
+      position: relative;
+      width: 10px;
+      height: 20px;
+      margin-bottom: -2px;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    .candle.lit .candle-flame { opacity: 1; }
+
+    /* flame shape */
+    .flame-inner {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 7px;
+      height: 14px;
+      background: radial-gradient(ellipse at 50% 80%, #fff 0%, #FFE066 35%, #FF9B21 65%, transparent 100%);
+      border-radius: 50% 50% 30% 30%;
+      animation: flameWaver 0.6s ease-in-out infinite alternate;
+      transform-origin: bottom center;
+    }
+    .flame-outer {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 12px;
+      height: 20px;
+      background: radial-gradient(ellipse at 50% 80%, rgba(255,180,30,0.4) 0%, transparent 70%);
+      border-radius: 50% 50% 30% 30%;
+      animation: flameWaver 0.8s ease-in-out infinite alternate-reverse;
+      transform-origin: bottom center;
+    }
+
+    @keyframes flameWaver {
+      0%   { transform: translateX(-50%) scaleX(1)    skewX(0deg);  }
+      100% { transform: translateX(-50%) scaleX(0.85) skewX(8deg);  }
+    }
+
+    /* glow from each lit candle */
+    .candle-glow {
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 40px;
+      background: radial-gradient(circle, rgba(255,220,60,0.35) 0%, transparent 70%);
+      border-radius: 50%;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      pointer-events: none;
+    }
+    .candle.lit .candle-glow { opacity: 1; }
+
+    /* candle stick */
+    .candle-stick {
+      width: clamp(5px, 1.5vw, 7px);
+      height: clamp(22px, 5.5vw, 30px);
+      background: linear-gradient(to right, #E8D0F0, #D4B8E8, #C8A8E0);
+      border-radius: 2px 2px 1px 1px;
+      box-shadow: inset 1px 0 2px rgba(255,255,255,0.3);
+    }
+
+    /* candle wax drip */
+    .candle-stick::after {
+      content: '';
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 3px;
+      height: 6px;
+      background: #E8D0F0;
+      border-radius: 0 0 3px 3px;
+      opacity: 0;
+      transition: opacity 0.6s ease 0.2s;
+    }
+    .candle.lit .candle-stick::after { opacity: 1; }
+
+    /* cake decorations */
+    .cake-deco {
+      position: absolute;
+      font-size: clamp(0.7rem, 2vw, 0.9rem);
+      opacity: 0.6;
+    }
+
+    /* ── BLOW SCENE ─────────────────────────── */
+    #scene-blow {
+      background: var(--night);
+      flex-direction: column;
+      gap: 0;
+    }
+
+    /* big name reveal */
+    .name-reveal {
+      font-family: 'Dancing Script', cursive;
+      font-weight: 700;
+      font-size: clamp(3rem, 13vw, 6.5rem);
+      background: linear-gradient(135deg, var(--gold) 0%, var(--gold2) 50%, var(--gold3) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-align: center;
+      line-height: 1.1;
+      filter: drop-shadow(0 0 24px rgba(245,200,66,0.4));
+      opacity: 0;
+      transform: scale(0.8) translateY(10px);
+      transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.34,1.56,0.64,1);
+      margin-bottom: 4px;
+    }
+    .name-reveal.show {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+
+    .happy-bday-text {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: clamp(0.95rem, 3vw, 1.2rem);
+      color: rgba(245,200,66,0.6);
+      text-align: center;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: clamp(20px, 5vw, 36px);
+      opacity: 0;
+      transition: opacity 0.8s ease 0.3s;
+    }
+    .happy-bday-text.show { opacity: 1; }
+
+    /* mini cake for blow scene */
+    .mini-cake-wrap {
+      position: relative;
+      width: clamp(140px, 38vw, 190px);
+      margin-bottom: clamp(24px, 5vw, 36px);
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.7s ease 0.5s, transform 0.7s ease 0.5s;
+    }
+    .mini-cake-wrap.show { opacity: 1; transform: translateY(0); }
+
+    /* ── BLOW BUTTON ────────────────────────── */
+    .blow-instruction {
+      font-size: clamp(0.78rem, 2.5vw, 0.9rem);
+      color: rgba(245,200,66,0.55);
+      margin-bottom: 14px;
+      letter-spacing: 0.06em;
+      text-align: center;
+      opacity: 0;
+      transition: opacity 0.6s ease 0.8s;
+    }
+    .blow-instruction.show { opacity: 1; }
+
+    .blow-btn {
+      position: relative;
+      width: clamp(130px, 38vw, 170px);
+      height: clamp(130px, 38vw, 170px);
+      border-radius: 50%;
+      border: 2px solid rgba(245,200,66,0.25);
+      background: transparent;
+      cursor: pointer;
+      overflow: hidden;
+      transition: border-color 0.3s ease, transform 0.15s ease;
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+      outline: none;
+    }
+    .blow-btn:hover  { border-color: rgba(245,200,66,0.5); transform: scale(1.02); }
+    .blow-btn:active { transform: scale(0.98); }
+
+    /* fill ring that animates on press */
+    .blow-fill {
+      position: absolute;
+      inset: 0;
+      background: conic-gradient(rgba(245,200,66,0.25) 0%, transparent 0%);
+      border-radius: 50%;
+      transition: none;
+    }
+
+    /* inner face */
+    .blow-inner {
+      position: absolute;
+      inset: 12px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(245,200,66,0.08) 0%, transparent 70%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+    .blow-emoji {
+      font-size: clamp(2rem, 7vw, 2.6rem);
+      line-height: 1;
+      transition: transform 0.2s ease;
+    }
+    .blow-btn:active .blow-emoji { transform: scale(0.9) rotate(-10deg); }
+    .blow-label {
+      font-size: clamp(0.65rem, 2vw, 0.75rem);
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(245,200,66,0.6);
+    }
+
+    /* pulse ring */
+    .blow-btn::after {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      border: 1px solid rgba(245,200,66,0.15);
+      animation: blowPulse 2.4s ease-in-out infinite;
+    }
+    @keyframes blowPulse {
+      0%, 100% { transform: scale(1);    opacity: 0.6; }
+      50%       { transform: scale(1.06); opacity: 0.2; }
+    }
+
+    .blow-btn-wrap {
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.7s ease 0.9s, transform 0.7s ease 0.9s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+    .blow-btn-wrap.show { opacity: 1; transform: translateY(0); }
+
+    /* ─── SCENE 3: MESSAGE REVEAL ──────────── */
+    #scene-message {
+      background: var(--night);
+      overflow-y: auto;
+      padding: 40px 24px 60px;
+      justify-content: flex-start;
+    }
+
+    .msg-inner {
+      max-width: 520px;
+      width: 100%;
+      margin: 0 auto;
+      padding-top: 20px;
+    }
+
+    /* sparkle header */
+    .msg-sparkles {
+      text-align: center;
+      font-size: 1.6rem;
+      margin-bottom: 6px;
+      letter-spacing: 0.3em;
+      animation: sparkleAnim 2s ease-in-out infinite;
+    }
+    @keyframes sparkleAnim {
+      0%, 100% { filter: brightness(1); }
+      50%       { filter: brightness(1.4); }
+    }
+
+    .msg-headline {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.5rem, 5.5vw, 2.2rem);
+      font-weight: 700;
+      text-align: center;
+      background: linear-gradient(135deg, var(--gold), var(--gold2), var(--rose));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.2;
+      margin-bottom: 6px;
+    }
+
+    .msg-from-line {
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--mauve);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: clamp(24px, 5vw, 36px);
+    }
+
+    /* message card */
+    .msg-card {
+      background: linear-gradient(135deg, rgba(245,200,66,0.06) 0%, rgba(200,48,100,0.04) 100%);
+      border: 1px solid rgba(245,200,66,0.14);
+      border-radius: 16px;
+      padding: clamp(22px, 5vw, 36px);
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* quote mark decoration */
+    .msg-card::before {
+      content: '"';
+      position: absolute;
+      top: -10px; left: 16px;
+      font-family: 'Playfair Display', serif;
+      font-size: 6rem;
+      color: rgba(245,200,66,0.07);
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    .msg-text {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: clamp(1rem, 3vw, 1.15rem);
+      color: var(--cream);
+      line-height: 1.85;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.9s ease, transform 0.9s ease;
+    }
+    .msg-text.show { opacity: 1; transform: translateY(0); }
+
+    /* sender sig */
+    .msg-sig {
+      text-align: right;
+      margin-top: 20px;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.8s ease 0.3s, transform 0.8s ease 0.3s;
+    }
+    .msg-sig.show { opacity: 1; transform: translateY(0); }
+    .msg-sig-label { font-size: 0.7rem; color: var(--mauve); letter-spacing: 0.1em; text-transform: uppercase; }
+    .msg-sig-name {
+      font-family: 'Dancing Script', cursive;
+      font-size: clamp(1.5rem, 4.5vw, 2rem);
+      font-weight: 700;
+      color: var(--rose);
+      line-height: 1.2;
+      filter: drop-shadow(0 2px 8px rgba(212,56,107,0.35));
+    }
+
+    /* special date pill */
+    .msg-date-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.78rem;
+      color: rgba(245,200,66,0.7);
+      background: rgba(245,200,66,0.07);
+      border: 1px solid rgba(245,200,66,0.15);
+      padding: 8px 16px;
+      border-radius: 100px;
+      margin-bottom: 28px;
+      opacity: 0;
+      transition: opacity 0.8s ease 0.5s;
+    }
+    .msg-date-pill.show { opacity: 1; }
+
+    /* share section */
+    .msg-share {
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.8s ease 0.6s, transform 0.8s ease 0.6s;
+    }
+    .msg-share.show { opacity: 1; transform: translateY(0); }
+
+    .msg-share-label {
+      font-size: 0.72rem;
+      color: var(--mauve);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    .share-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .share-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 500;
+      padding: 11px 20px;
+      border-radius: 100px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .share-btn:hover { transform: translateY(-2px); }
+    .btn-wa  { background: #25D366; color: #fff; box-shadow: 0 4px 16px rgba(37,211,102,0.3); }
+    .btn-ms  { background: #0078FF; color: #fff; box-shadow: 0 4px 16px rgba(0,120,255,0.3); }
+    .btn-cp  { background: rgba(255,248,232,0.1); color: var(--cream); border: 1px solid rgba(255,248,232,0.18); }
+
+    /* expiry + brand */
+    .msg-expiry {
+      text-align: center;
+      margin-top: 28px;
+      font-size: 0.72rem;
+      color: rgba(154,96,112,0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .expiry-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--rose);
+      animation: cakePulse 2s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+    .lg-brand {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 0.7rem;
+      color: rgba(154,96,112,0.4);
+    }
+    .lg-brand a { color: rgba(212,56,107,0.5); text-decoration: none; }
+    .lg-brand a:hover { color: var(--rose); }
+
+    /* ── smoke particles after blow ─────────── */
+    .smoke {
+      position: fixed;
+      pointer-events: none;
+      z-index: 99;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,240,200,0.3) 0%, transparent 70%);
+      animation: smokeRise linear forwards;
+    }
+    @keyframes smokeRise {
+      0%   { transform: translateY(0) scale(1);   opacity: 0.8; }
+      100% { transform: translateY(-120px) scale(3); opacity: 0; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="confetti-canvas"></canvas>
+
+<!-- LOADING -->
+<div class="scene active" id="scene-loading">
+  <span class="loading-cake">🎂</span>
+  <div class="loading-text">Preparing your surprise...</div>
+</div>
+
+<!-- ERROR -->
+<div class="scene" id="scene-error">
+  <span class="error-emoji">🎂</span>
+  <div class="error-title">This surprise has passed</div>
+  <p class="error-sub">Birthday surprises are made for a single special moment.<br/>This one has expired — but the love behind it hasn't.</p>
+</div>
+
+<!-- SCENE 1: CANDLE LIGHTING -->
+<div class="scene" id="scene-candles">
+  <div class="dark-room-label" id="room-label">Someone prepared a surprise for you</div>
+
+  <div class="cake-wrap">
+    <!-- candles sit on top of top tier -->
+    <div class="cake-body">
+      <div class="cake-tier cake-tier-top">
+        <div class="candles-row" id="candles-row">
+          <!-- injected by JS -->
+        </div>
+      </div>
+      <div class="cake-tier cake-tier-mid"></div>
+      <div class="cake-tier cake-tier-bot"></div>
+    </div>
+    <div class="cake-plate"></div>
+  </div>
+</div>
+
+<!-- SCENE 2: NAME REVEAL + BLOW -->
+<div class="scene" id="scene-blow">
+  <div class="happy-bday-text" id="bday-text">Happy Birthday</div>
+  <div class="name-reveal" id="name-reveal">—</div>
+
+  <div class="mini-cake-wrap" id="mini-cake">
+    <!-- same cake, smaller, with lit candles -->
+    <div class="cake-body">
+      <div class="cake-tier cake-tier-top" style="height:30px;">
+        <div class="candles-row" id="mini-candles-row" style="top:-18px;gap:6px;"></div>
+      </div>
+      <div class="cake-tier cake-tier-mid" style="height:36px;"></div>
+      <div class="cake-tier cake-tier-bot" style="height:42px;"></div>
+    </div>
+    <div class="cake-plate"></div>
+  </div>
+
+  <div class="blow-instruction show" id="blow-instr">Hold to blow out the candles 🌬️</div>
+
+  <div class="blow-btn-wrap" id="blow-wrap">
+    <button class="blow-btn" id="blow-btn"
+      ontouchstart="startBlow(event)" ontouchend="endBlow(event)"
+      onmousedown="startBlow(event)" onmouseup="endBlow(event)" onmouseleave="endBlow(event)">
+      <div class="blow-fill" id="blow-fill"></div>
+      <div class="blow-inner">
+        <span class="blow-emoji">🌬️</span>
+        <span class="blow-label">Blow</span>
+      </div>
+    </button>
+  </div>
+</div>
+
+<!-- SCENE 3: MESSAGE -->
+<div class="scene" id="scene-message">
+  <div class="msg-inner">
+    <div class="msg-sparkles">✨ 🎉 ✨</div>
+    <div class="msg-headline" id="msg-headline">Happy Birthday!</div>
+    <div class="msg-from-line" id="msg-from-line">A message from someone special</div>
+
+    <div class="msg-date-pill" id="msg-date-pill" style="display:none;">
+      <span>🗓️</span><span id="msg-date-text"></span>
+    </div>
+
+    <div class="msg-card">
+      <div class="msg-text" id="msg-text">—</div>
+      <div class="msg-sig" id="msg-sig">
+        <div class="msg-sig-label">With love,</div>
+        <div class="msg-sig-name" id="msg-sig-name">—</div>
+      </div>
+    </div>
+
+    <div class="msg-share" id="msg-share">
+      <div class="msg-share-label">Share this surprise</div>
+      <div class="share-row">
+        <a class="share-btn btn-wa" id="btn-wa" href="#" target="_blank">📱 WhatsApp</a>
+        <a class="share-btn btn-ms" id="btn-ms" href="#" target="_blank">💬 Messenger</a>
+        <button class="share-btn btn-cp" id="btn-cp" onclick="copyLink()">📋 Copy link</button>
+      </div>
+    </div>
+
+    <div class="msg-expiry" id="msg-expiry">
+      <div class="expiry-dot"></div>
+      <span id="expiry-text">Expires in 24 hours</span>
+    </div>
+    <div class="lg-brand">
+      Created with <a href="https://loversgift.io">LoversGift</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ─── CONFIG ──────────────────────────────────────────────────
+  const API_BASE = 'https://your-app.railway.app'; // ← YOUR RAILWAY URL
+
+  // ─── STATE ───────────────────────────────────────────────────
+  let giftData     = null;
+  const CANDLE_COUNT = 5;
+
+  // ─── SCENE SWITCHER ──────────────────────────────────────────
+  function goToScene(id) {
+    document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  // ─── CONFETTI ENGINE ─────────────────────────────────────────
+  const canvas = document.getElementById('confetti-canvas');
+  const ctx    = canvas.getContext('2d');
+  let pieces   = [];
+  let confettiRunning = false;
+
+  function resizeCanvas() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  const CONFETTI_COLORS = [
+    '#F5C842','#E8A020','#D4386B','#FF6B9D',
+    '#FFF8E8','#FF9B21','#C8304A','#FFE0A0',
+    '#A855F7','#38BDF8',
+  ];
+
+  function launchConfetti() {
+    const cx = canvas.width / 2;
+    confettiRunning = true;
+    for (let i = 0; i < 180; i++) {
+      const angle  = (Math.random() * Math.PI * 2);
+      const speed  = 4 + Math.random() * 14;
+      const size   = 5 + Math.random() * 9;
+      const isRect = Math.random() > 0.4;
+      pieces.push({
+        x: cx + (Math.random() - 0.5) * 100,
+        y: canvas.height * 0.42,
+        vx: Math.cos(angle) * speed * (0.5 + Math.random()),
+        vy: Math.sin(angle) * speed - (6 + Math.random() * 8), // upward bias
+        color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+        size,
+        rotation: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.3,
+        isRect,
+        alpha: 1,
+        gravity: 0.25 + Math.random() * 0.15,
+      });
+    }
+    if (!confettiRunning) animateConfetti();
+    animateConfetti();
+  }
+
+  function animateConfetti() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pieces = pieces.filter(p => p.alpha > 0.02);
+
+    for (const p of pieces) {
+      p.x  += p.vx;
+      p.y  += p.vy;
+      p.vy += p.gravity;
+      p.vx *= 0.99;
+      p.rotation += p.rotSpeed;
+      if (p.y > canvas.height * 0.6) p.alpha -= 0.012;
+
+      ctx.save();
+      ctx.globalAlpha = p.alpha;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rotation);
+      ctx.fillStyle = p.color;
+      if (p.isRect) {
+        ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+      } else {
+        ctx.beginPath();
+        ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    if (pieces.length > 0) requestAnimationFrame(animateConfetti);
+    else { ctx.clearRect(0, 0, canvas.width, canvas.height); confettiRunning = false; }
+  }
+
+  // ─── CANDLE BUILDER ──────────────────────────────────────────
+  function buildCandles(rowId, count, scale = 1) {
+    const row = document.getElementById(rowId);
+    if (!row) return;
+    row.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+      const c = document.createElement('div');
+      c.className = 'candle';
+      c.id = `${rowId}-candle-${i}`;
+      c.innerHTML = `
+        <div class="candle-flame">
+          <div class="flame-outer"></div>
+          <div class="flame-inner"></div>
+        </div>
+        <div class="candle-glow"></div>
+        <div class="candle-stick" style="height:${Math.floor((22 + Math.random()*12)*scale)}px;"></div>
+      `;
+      row.appendChild(c);
+    }
+  }
+
+  // ─── LIGHT CANDLES ONE BY ONE ────────────────────────────────
+  function lightCandles(rowId, count, onComplete) {
+    let i = 0;
+    function lightNext() {
+      if (i >= count) { if (onComplete) onComplete(); return; }
+      const candle = document.getElementById(`${rowId}-candle-${i}`);
+      if (candle) {
+        candle.classList.add('lit');
+        // tiny screen flash on each light
+        flashGlow();
+      }
+      i++;
+      setTimeout(lightNext, 320 + Math.random() * 180);
+    }
+    setTimeout(lightNext, 800);
+  }
+
+  function flashGlow() {
+    const flash = document.createElement('div');
+    flash.style.cssText = `
+      position:fixed;inset:0;pointer-events:none;z-index:50;
+      background:radial-gradient(circle at 50% 55%, rgba(245,200,66,0.08) 0%, transparent 60%);
+      opacity:0;transition:opacity 0.15s ease;
+    `;
+    document.body.appendChild(flash);
+    requestAnimationFrame(() => {
+      flash.style.opacity = '1';
+      setTimeout(() => {
+        flash.style.opacity = '0';
+        setTimeout(() => flash.remove(), 200);
+      }, 100);
+    });
+  }
+
+  // ─── BLOW BUTTON LOGIC ────────────────────────────────────────
+  let blowInterval = null;
+  let blowProgress = 0;
+  const BLOW_DURATION = 1800; // ms to hold
+
+  function startBlow(e) {
+    e.preventDefault();
+    if (blowProgress >= 100) return;
+
+    const fill     = document.getElementById('blow-fill');
+    const startTime = Date.now();
+    const startProg = blowProgress;
+
+    blowInterval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      blowProgress = Math.min(100, startProg + (elapsed / BLOW_DURATION) * 100);
+      fill.style.background = `conic-gradient(rgba(245,200,66,0.4) ${blowProgress * 3.6}deg, transparent 0deg)`;
+
+      // candles flicker as pressure builds
+      if (blowProgress > 30) flickerCandles();
+
+      if (blowProgress >= 100) {
+        clearInterval(blowInterval);
+        blowInterval = null;
+        triggerBlow();
+      }
+    }, 30);
+  }
+
+  function endBlow(e) {
+    e.preventDefault();
+    if (blowInterval) {
+      clearInterval(blowInterval);
+      blowInterval = null;
+      // progress slowly drains back if not complete
+      if (blowProgress < 100) drainBlow();
+    }
+  }
+
+  function drainBlow() {
+    const fill = document.getElementById('blow-fill');
+    const drain = setInterval(() => {
+      blowProgress = Math.max(0, blowProgress - 3);
+      fill.style.background = `conic-gradient(rgba(245,200,66,0.3) ${blowProgress * 3.6}deg, transparent 0deg)`;
+      if (blowProgress <= 0) clearInterval(drain);
+    }, 30);
+  }
+
+  function flickerCandles() {
+    const candles = document.querySelectorAll('#mini-candles-row .candle.lit');
+    candles.forEach(c => {
+      const flame = c.querySelector('.flame-inner');
+      if (flame) {
+        flame.style.transform = `translateX(-50%) scaleX(${0.5 + Math.random() * 0.8}) skewX(${(Math.random()-0.5)*20}deg)`;
+        setTimeout(() => { if (flame) flame.style.transform = ''; }, 100);
+      }
+    });
+  }
+
+  function triggerBlow() {
+    // Extinguish mini-cake candles
+    document.querySelectorAll('#mini-candles-row .candle').forEach(c => {
+      c.classList.remove('lit');
+    });
+
+    // Smoke puffs from each candle position
+    const candles = document.querySelectorAll('#mini-candles-row .candle');
+    candles.forEach(c => {
+      const rect = c.getBoundingClientRect();
+      for (let k = 0; k < 3; k++) {
+        setTimeout(() => spawnSmoke(rect.left + rect.width/2, rect.top), k * 80);
+      }
+    });
+
+    // Brief pause, then explode confetti + switch scene
+    setTimeout(() => {
+      launchConfetti();
+      setTimeout(() => {
+        goToScene('scene-message');
+        populateMessage();
+        // Second confetti burst
+        setTimeout(launchConfetti, 400);
+      }, 600);
+    }, 400);
+  }
+
+  function spawnSmoke(x, y) {
+    const s = document.createElement('div');
+    s.className = 'smoke';
+    const size = 16 + Math.random() * 16;
+    s.style.cssText = `
+      left:${x - size/2}px;top:${y}px;
+      width:${size}px;height:${size}px;
+      animation-duration:${0.9 + Math.random()*0.5}s;
+    `;
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 1500);
+  }
+
+  // ─── POPULATE MESSAGE SCENE ───────────────────────────────────
+  function populateMessage() {
+    const g = giftData;
+    const baseUrl = g.shareUrl || window.location.href;
+
+    // Headline
+    document.getElementById('msg-headline').textContent =
+      g.receiverName ? `Happy Birthday, ${g.receiverName}! 🎂` : 'Happy Birthday! 🎂';
+    document.getElementById('msg-from-line').textContent =
+      g.senderName ? `A birthday message from ${g.senderName}` : 'A birthday message from someone who loves you';
+
+    // Message
+    document.getElementById('msg-text').textContent = g.message || '';
+    document.getElementById('msg-sig-name').textContent = g.senderName || '—';
+
+    // Special date
+    if (g.specialDate) {
+      const d = new Date(g.specialDate + 'T12:00:00');
+      document.getElementById('msg-date-text').textContent =
+        d.toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+      document.getElementById('msg-date-pill').style.display = '';
+    }
+
+    // Share URLs
+    const waMsg = encodeURIComponent(`🎂 Someone sent you a birthday surprise → ${baseUrl}`);
+    document.getElementById('btn-wa').href = `https://wa.me/?text=${waMsg}`;
+    document.getElementById('btn-ms').href = `fb-messenger://share/?link=${encodeURIComponent(baseUrl)}`;
+
+    // Expiry
+    setExpiryText(g.expiresAt);
+
+    // Stagger reveal animations
+    setTimeout(() => document.getElementById('msg-text').classList.add('show'),   200);
+    setTimeout(() => document.getElementById('msg-sig').classList.add('show'),    500);
+    setTimeout(() => document.getElementById('msg-date-pill').classList.add('show'), 700);
+    setTimeout(() => document.getElementById('msg-share').classList.add('show'),  900);
+  }
+
+  // ─── EXPIRY COUNTDOWN ─────────────────────────────────────────
+  function setExpiryText(expiresAt) {
+    const el = document.getElementById('expiry-text');
+    if (!expiresAt || !el) return;
+    function update() {
+      const ms = new Date(expiresAt) - Date.now();
+      if (ms <= 0) { el.textContent = 'This surprise has expired'; return; }
+      const h = Math.floor(ms / 3600000);
+      const m = Math.floor((ms % 3600000) / 60000);
+      el.textContent = h > 0
+        ? `This surprise expires in ${h}h ${m}m`
+        : `This surprise expires in ${m}m`;
+    }
+    update();
+    setInterval(update, 60000);
+  }
+
+  // ─── COPY LINK ────────────────────────────────────────────────
+  function copyLink() {
+    const link = giftData?.shareUrl || window.location.href;
+    navigator.clipboard.writeText(link).then(() => {
+      const btn = document.getElementById('btn-cp');
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copied!';
+      btn.style.background = 'rgba(76,175,80,0.2)';
+      btn.style.color = '#81c784';
+      setTimeout(() => {
+        btn.textContent = orig;
+        btn.style.background = '';
+        btn.style.color = '';
+      }, 2500);
+    });
+  }
+
+  // ─── DEMO DATA ────────────────────────────────────────────────
+  const DEMO_GIFT = {
+    receiverName: 'Sofia',
+    senderName:   'Marco',
+    message:      'I still remember the day you were born into my world — or rather, the day you walked into it. Every year you get more beautiful, more brilliant, more you. Today is yours. I hope it feels as golden as you make every ordinary day feel for me. Happy Birthday, my love.',
+    specialDate:  null,
+    theme:        'gold',
+    expiresAt:    new Date(Date.now() + 23 * 3600 * 1000).toISOString(),
+    shareUrl:     window.location.href,
+  };
+
+  // ─── LOAD GIFT ────────────────────────────────────────────────
+  async function loadGift() {
+    let code = '';
+    const pathParts = window.location.pathname.split('/');
+    const gIdx = pathParts.indexOf('g');
+    if (gIdx !== -1 && pathParts[gIdx + 1]) {
+      code = pathParts[gIdx + 1];
+    } else {
+      code = new URLSearchParams(window.location.search).get('code') || '';
+    }
+
+    if (!code) {
+      if (window.location.search.includes('demo')) {
+        giftData = DEMO_GIFT; startExperience(); return;
+      }
+      goToScene('scene-error'); return;
+    }
+
+    try {
+      const resp = await fetch(`${API_BASE}/api/gifts/${code}/view`);
+      const data = await resp.json();
+      if (!resp.ok || data.expired || data.error) { goToScene('scene-error'); return; }
+      giftData = data.gift;
+      startExperience();
+    } catch {
+      if (window.location.search.includes('demo')) {
+        giftData = DEMO_GIFT; startExperience();
+      } else {
+        goToScene('scene-error');
+      }
+    }
+  }
+
+  // ─── START THE EXPERIENCE ─────────────────────────────────────
+  function startExperience() {
+    // Build candles in both rows
+    buildCandles('candles-row',       CANDLE_COUNT, 1);
+    buildCandles('mini-candles-row',  CANDLE_COUNT, 0.75);
+
+    // Update room label with name
+    if (giftData.receiverName) {
+      document.getElementById('room-label').textContent =
+        `${giftData.receiverName}, someone prepared a surprise for you`;
+    }
+
+    // Switch to candle scene
+    goToScene('scene-candles');
+
+    // Light candles, then transition to blow scene
+    lightCandles('candles-row', CANDLE_COUNT, () => {
+      // Short pause after all candles lit
+      setTimeout(() => {
+        // Fade out candle scene
+        document.getElementById('scene-candles').style.transition = 'opacity 0.7s ease';
+        document.getElementById('scene-candles').style.opacity = '0';
+
+        setTimeout(() => {
+          // Prepare blow scene
+          document.getElementById('name-reveal').textContent = giftData.receiverName || 'You';
+          // Light mini candles instantly
+          document.querySelectorAll('#mini-candles-row .candle').forEach(c => c.classList.add('lit'));
+
+          goToScene('scene-blow');
+
+          // Stagger blow scene reveals
+          setTimeout(() => document.getElementById('bday-text').classList.add('show'),    100);
+          setTimeout(() => document.getElementById('name-reveal').classList.add('show'),   300);
+          setTimeout(() => document.getElementById('mini-cake').classList.add('show'),     600);
+          setTimeout(() => document.getElementById('blow-wrap').classList.add('show'),     900);
+
+        }, 700);
+      }, 900);
+    });
+  }
+
+  // ─── INIT ─────────────────────────────────────────────────────
+  loadGift();
+</script>
+</body>
+</html>

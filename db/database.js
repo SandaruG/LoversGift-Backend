@@ -12,7 +12,7 @@ let db;
 function getDb() {
   if (!db) {
     db = new Database(DB_PATH);
-    db.pragma('journal_mode = WAL'); // faster writes
+    db.pragma('journal_mode = WAL');
     db.pragma('foreign_keys = ON');
     setupSchema();
   }
@@ -20,55 +20,76 @@ function getDb() {
 }
 
 function setupSchema() {
-  // ── PRODUCTS table ─────────────────────────────────────────────
-  // This is your marketplace catalogue. Add as many products as you
-  // want by inserting rows here (or via the admin API).
+
+  // ── PRODUCTS ───────────────────────────────────────────────────
   db.exec(`
     CREATE TABLE IF NOT EXISTS products (
-      id          INTEGER PRIMARY KEY AUTOINCREMENT,
-      slug        TEXT    UNIQUE NOT NULL,   -- url-friendly id e.g. "animated-love-letter"
-      title       TEXT    NOT NULL,
-      category    TEXT    NOT NULL,          -- love | birthday | anniversary | surprise | free
-      emoji       TEXT    NOT NULL DEFAULT '💌',
-      bg_gradient TEXT    NOT NULL DEFAULT 'linear-gradient(135deg,#1C0C14,#3D1A28)',
-      description TEXT    NOT NULL,
-      price_cents INTEGER NOT NULL DEFAULT 0, -- 0 = free, 499 = $4.99
-      badge       TEXT,                      -- null | "new" | "hot" | "free"
-      badge_label TEXT,
-      stars       INTEGER NOT NULL DEFAULT 5,
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      slug         TEXT    UNIQUE NOT NULL,
+      title        TEXT    NOT NULL,
+      category     TEXT    NOT NULL,
+      emoji        TEXT    NOT NULL DEFAULT '💌',
+      bg_gradient  TEXT    NOT NULL DEFAULT 'linear-gradient(135deg,#1C0C14,#3D1A28)',
+      description  TEXT    NOT NULL,
+      price_cents  INTEGER NOT NULL DEFAULT 0,
+      badge        TEXT,
+      badge_label  TEXT,
+      stars        INTEGER NOT NULL DEFAULT 5,
       review_count INTEGER NOT NULL DEFAULT 0,
-      features    TEXT    NOT NULL DEFAULT '[]', -- JSON array of feature strings
-      active      INTEGER NOT NULL DEFAULT 1,    -- 0 = hidden from marketplace
-      sort_order  INTEGER NOT NULL DEFAULT 0,    -- lower = shown first
-      created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+      features     TEXT    NOT NULL DEFAULT '[]',
+      active       INTEGER NOT NULL DEFAULT 1,
+      sort_order   INTEGER NOT NULL DEFAULT 0,
+      created_at   TEXT    NOT NULL DEFAULT (datetime('now'))
     );
   `);
 
-  // ── GIFTS table ────────────────────────────────────────────────
-  // Each created gift gets a row. Auto-deleted after expiry_hours.
+  // ── ORDERS — created before payment, gift activates after ──────
+  // Status flow: pending → paid → expired (cleanup)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS orders (
+      id               INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_ref        TEXT UNIQUE NOT NULL, -- our internal ref e.g. "LG-xK9m2p"
+      paypal_order_id  TEXT UNIQUE,          -- PayPal's order ID from createOrder
+      product_id       INTEGER REFERENCES products(id),
+      amount_cents     INTEGER NOT NULL,
+      currency         TEXT    NOT NULL DEFAULT 'USD',
+      sender_name      TEXT    NOT NULL,
+      receiver_name    TEXT    NOT NULL,
+      message          TEXT    NOT NULL,
+      special_date     TEXT,
+      theme            TEXT    NOT NULL DEFAULT 'rose',
+      extra_data       TEXT    DEFAULT '{}', -- JSON for product-specific fields
+      status           TEXT    NOT NULL DEFAULT 'pending',  -- pending|paid|failed
+      created_at       TEXT    NOT NULL DEFAULT (datetime('now')),
+      paid_at          TEXT,
+      gift_code        TEXT    REFERENCES gifts(code)
+    );
+  `);
+
+  // ── GIFTS — only created after payment confirmed ───────────────
   db.exec(`
     CREATE TABLE IF NOT EXISTS gifts (
-      id           INTEGER PRIMARY KEY AUTOINCREMENT,
-      code         TEXT UNIQUE NOT NULL,   -- the short random URL code e.g. "xK9m2pAb"
-      product_id   INTEGER REFERENCES products(id),
-      sender_name  TEXT NOT NULL,
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      code          TEXT UNIQUE NOT NULL,
+      product_id    INTEGER REFERENCES products(id),
+      order_id      INTEGER REFERENCES orders(id),
+      sender_name   TEXT NOT NULL,
       receiver_name TEXT NOT NULL,
-      message      TEXT NOT NULL,
-      special_date TEXT,
-      theme        TEXT NOT NULL DEFAULT 'rose',
-      photo_path   TEXT,                  -- relative path under /public/gifts/ if uploaded
-      created_at   TEXT NOT NULL DEFAULT (datetime('now')),
-      expires_at   TEXT NOT NULL,         -- ISO datetime string
-      view_count   INTEGER NOT NULL DEFAULT 0,
-      paid         INTEGER NOT NULL DEFAULT 0  -- 0 = unpaid/free, 1 = paid
+      message       TEXT NOT NULL,
+      special_date  TEXT,
+      theme         TEXT NOT NULL DEFAULT 'rose',
+      extra_data    TEXT DEFAULT '{}',
+      photo_path    TEXT,
+      created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+      expires_at    TEXT NOT NULL,
+      view_count    INTEGER NOT NULL DEFAULT 0,
+      paid          INTEGER NOT NULL DEFAULT 1
     );
   `);
 
-  // ── SEED default products if table is empty ────────────────────
+  // Seed products if empty
   const count = db.prepare('SELECT COUNT(*) as n FROM products').get().n;
-  if (count === 0) {
-    seedProducts();
-  }
+  if (count === 0) seedProducts();
 }
 
 function seedProducts() {
@@ -77,8 +98,8 @@ function seedProducts() {
       (slug, title, category, emoji, bg_gradient, description, price_cents,
        badge, badge_label, stars, review_count, features, sort_order)
     VALUES
-      (@slug, @title, @category, @emoji, @bg_gradient, @description, @price_cents,
-       @badge, @badge_label, @stars, @review_count, @features, @sort_order)
+      (@slug,@title,@category,@emoji,@bg_gradient,@description,@price_cents,
+       @badge,@badge_label,@stars,@review_count,@features,@sort_order)
   `);
 
   const seedMany = db.transaction((products) => {
@@ -183,7 +204,7 @@ function seedProducts() {
       category: 'anniversary',
       emoji: '🎵',
       bg_gradient: 'linear-gradient(135deg,#0A0A1A,#181040)',
-      description: 'A dedicated page for your song — with lyrics (optional), the story of how it became yours, and a Spotify play button.',
+      description: 'A dedicated page for your song — with lyrics, the story of how it became yours, and a Spotify play button.',
       price_cents: 599,
       badge: 'new', badge_label: '✨ New',
       stars: 5, review_count: 44,
@@ -192,7 +213,7 @@ function seedProducts() {
     },
   ]);
 
-  console.log('✅  Seeded 8 default products into the database.');
+  console.log('✅  Seeded 8 default products.');
 }
 
 module.exports = { getDb };
