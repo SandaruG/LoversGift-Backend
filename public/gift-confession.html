@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>A confession for you 🕯️</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400;1,500&family=DM+Sans:wght@300;400;500&family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --night:   #030206;
+      --deep:    #07030F;
+      --rose:    #B82848;
+      --rose2:   #D84868;
+      --gold:    #C08840;
+      --gold2:   #E0AA60;
+      --gold3:   #F5CC80;
+      --cream:   #FDF0E0;
+      --cream2:  #E8D8C0;
+      --mauve:   #806070;
+      --mauve2:  #503848;
+      --amber:   #C87028;
+    }
+
+    html, body {
+      height: 100%; width: 100%;
+      background: var(--night);
+      color: var(--cream);
+      font-family: 'DM Sans', sans-serif;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* ══════════════════════════════════════
+       RAIN CANVAS — fixed, always behind
+    ══════════════════════════════════════ */
+    #rain-canvas {
+      position: fixed; inset: 0;
+      z-index: 0; pointer-events: none;
+    }
+
+    /* ══════════════════════════════════════
+       LAMP GLOW — bottom right corner warmth
+    ══════════════════════════════════════ */
+    #lamp-glow {
+      position: fixed;
+      bottom: -60px; right: -60px;
+      width: 280px; height: 280px;
+      border-radius: 50%;
+      background: radial-gradient(circle,
+        rgba(200,136,64,0.18) 0%,
+        rgba(200,136,64,0.08) 40%,
+        transparent 70%
+      );
+      pointer-events: none;
+      z-index: 1;
+      animation: lampBreath 4s ease-in-out infinite;
+    }
+    @keyframes lampBreath {
+      0%,100% { opacity: 0.8; transform: scale(1); }
+      50%      { opacity: 1;   transform: scale(1.08); }
+    }
+
+    /* top ambient */
+    #top-glow {
+      position: fixed; top: -80px; left: 50%;
+      transform: translateX(-50%);
+      width: 400px; height: 200px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse,
+        rgba(184,40,72,0.06) 0%, transparent 70%
+      );
+      pointer-events: none; z-index: 1;
+    }
+
+    /* ══════════════════════════════════════
+       SCENES
+    ══════════════════════════════════════ */
+    .scene {
+      position: fixed; inset: 0; z-index: 10;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 32px 24px;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.8s ease;
+    }
+    .scene.active { opacity: 1; pointer-events: all; }
+
+    /* ══════════════════════════════════════
+       LOADING
+    ══════════════════════════════════════ */
+    #scene-loading { background: var(--night); }
+    .load-candle {
+      font-size: 2.2rem; margin-bottom: 18px;
+      animation: candleFlicker 1.8s ease-in-out infinite;
+    }
+    @keyframes candleFlicker {
+      0%,100% { transform: scale(1) rotate(-1deg); filter: brightness(1); }
+      33%      { transform: scale(1.06) rotate(1deg); filter: brightness(1.3); }
+      66%      { transform: scale(0.97) rotate(-2deg); filter: brightness(0.9); }
+    }
+    .load-text {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic; font-size: 0.95rem;
+      color: var(--mauve); letter-spacing: 0.1em;
+    }
+
+    /* ══════════════════════════════════════
+       ERROR
+    ══════════════════════════════════════ */
+    #scene-error {
+      background: var(--night);
+      text-align: center;
+    }
+    .err-icon  { font-size: 3rem; margin-bottom: 18px; display: block; }
+    .err-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.7rem; font-style: italic;
+      color: var(--cream); margin-bottom: 10px;
+    }
+    .err-body  { font-size: 0.88rem; color: var(--mauve); line-height: 1.7; }
+
+    /* ══════════════════════════════════════
+       SCENE 1 — WAIT SCREEN
+       Recipient sees this first. Tap to begin.
+    ══════════════════════════════════════ */
+    #scene-wait { text-align: center; }
+
+    .wait-time {
+      font-size: 0.65rem; letter-spacing: 0.22em;
+      text-transform: uppercase; color: var(--mauve);
+      margin-bottom: 28px; opacity: 0;
+      animation: fadeUp 0.8s ease 0.4s forwards;
+    }
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(8px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+
+    /* candle SVG */
+    .candle-wrap {
+      position: relative;
+      width: 56px; height: 140px;
+      margin: 0 auto 36px;
+      opacity: 0;
+      animation: fadeUp 0.9s ease 0.7s forwards;
+    }
+    .candle-body {
+      position: absolute;
+      bottom: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 22px; height: 90px;
+      background: linear-gradient(170deg, #E8D0C0, #C8B098);
+      border-radius: 3px 3px 2px 2px;
+    }
+    /* wax drips */
+    .candle-body::before {
+      content:'';
+      position: absolute;
+      top: 8px; left: 3px;
+      width: 5px; height: 18px;
+      background: rgba(255,248,240,0.6);
+      border-radius: 0 0 3px 3px;
+    }
+    .candle-body::after {
+      content:'';
+      position: absolute;
+      top: 14px; right: 4px;
+      width: 4px; height: 12px;
+      background: rgba(255,248,240,0.4);
+      border-radius: 0 0 3px 3px;
+    }
+    /* wick */
+    .candle-wick {
+      position: absolute;
+      bottom: 90px; left: 50%;
+      transform: translateX(-50%);
+      width: 2px; height: 12px;
+      background: #2A1808;
+      border-radius: 1px;
+    }
+    /* flame */
+    .candle-flame {
+      position: absolute;
+      bottom: 100px; left: 50%;
+      transform: translateX(-50%);
+      width: 18px; height: 34px;
+    }
+    .flame-core {
+      position: absolute;
+      bottom: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 10px; height: 26px;
+      background: radial-gradient(ellipse at 50% 80%,
+        #fff 0%, #FFF070 30%, #FF9020 65%, transparent 100%
+      );
+      border-radius: 50% 50% 40% 40%;
+      animation: flameWave 0.7s ease-in-out infinite alternate;
+    }
+    .flame-outer {
+      position: absolute;
+      bottom: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 18px; height: 34px;
+      background: radial-gradient(ellipse at 50% 80%,
+        rgba(255,160,40,0.5) 0%, transparent 70%
+      );
+      border-radius: 50% 50% 40% 40%;
+      animation: flameWave 1s ease-in-out infinite alternate-reverse;
+    }
+    @keyframes flameWave {
+      0%   { transform: translateX(-50%) scaleX(1)    skewX(0deg);   }
+      100% { transform: translateX(-50%) scaleX(0.82) skewX(6deg);   }
+    }
+    /* candle glow on surface */
+    .candle-glow-ring {
+      position: absolute;
+      bottom: -10px; left: 50%;
+      transform: translateX(-50%);
+      width: 60px; height: 14px;
+      background: radial-gradient(ellipse,
+        rgba(200,120,40,0.35) 0%, transparent 70%
+      );
+      border-radius: 50%;
+      animation: lampBreath 2s ease-in-out infinite;
+    }
+
+    .wait-for-who {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(1.1rem, 4vw, 1.4rem);
+      color: rgba(253,240,224,0.75);
+      margin-bottom: 8px;
+      line-height: 1.4;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 1.1s forwards;
+    }
+    .wait-name {
+      font-family: 'Dancing Script', cursive;
+      font-size: clamp(1.8rem, 7vw, 2.8rem);
+      font-weight: 700;
+      color: var(--gold3);
+      filter: drop-shadow(0 0 16px rgba(192,136,64,0.5));
+      margin-bottom: 44px;
+      opacity: 0;
+      animation: fadeUp 0.9s ease 1.4s forwards;
+    }
+
+    .tap-btn {
+      display: inline-flex; flex-direction: column;
+      align-items: center; gap: 12px;
+      cursor: pointer; padding: 0;
+      background: none; border: none;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 1.9s forwards;
+    }
+    .tap-circle {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(184,40,72,0.4);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem;
+      background: rgba(184,40,72,0.06);
+      transition: all 0.2s ease;
+      animation: tapPulse 2.8s ease-in-out infinite 2.5s;
+    }
+    @keyframes tapPulse {
+      0%,100%{ box-shadow: 0 0 0 0 rgba(184,40,72,0); }
+      50%    { box-shadow: 0 0 0 14px rgba(184,40,72,0); }
+    }
+    .tap-btn:hover .tap-circle {
+      background: rgba(184,40,72,0.14);
+      border-color: rgba(184,40,72,0.7);
+    }
+    .tap-label {
+      font-size: 0.65rem; letter-spacing: 0.2em;
+      text-transform: uppercase; color: var(--mauve);
+    }
+
+    /* ══════════════════════════════════════
+       SCENE 2 — CONFESSION PLAYBACK
+    ══════════════════════════════════════ */
+    #scene-play {
+      flex-direction: column;
+      justify-content: center;
+      gap: 0;
+    }
+
+    /* HEARTBEAT CANVAS — top area */
+    #heartbeat-canvas {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 80px;
+      opacity: 0.18;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* who is speaking */
+    .play-from {
+      font-size: 0.62rem; letter-spacing: 0.2em;
+      text-transform: uppercase; color: var(--mauve);
+      text-align: center; margin-bottom: clamp(20px,5vw,36px);
+      position: relative; z-index: 2;
+    }
+
+    /* sentence display — the heart of the experience */
+    .sentence-stage {
+      position: relative; z-index: 2;
+      width: 100%;
+      max-width: 540px;
+      min-height: clamp(120px, 28vw, 180px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 8px;
+      margin: 0 auto clamp(20px,5vw,36px);
+    }
+
+    .sentence {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(1.25rem, 5vw, 1.75rem);
+      font-weight: 300;
+      color: var(--cream);
+      line-height: 1.65;
+      text-align: center;
+      letter-spacing: 0.01em;
+      opacity: 0;
+      transform: scale(0.96) translateY(6px);
+      transition: opacity 1.2s cubic-bezier(0.4,0,0.2,1),
+                  transform 1.2s cubic-bezier(0.4,0,0.2,1);
+      position: absolute;
+      inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 12px;
+    }
+    .sentence.in {
+      opacity: 1; transform: scale(1) translateY(0);
+    }
+    .sentence.out {
+      opacity: 0; transform: scale(1.04) translateY(-8px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    /* soft rose glow that pulses with each sentence */
+    .sentence-glow {
+      position: absolute; inset: -30px;
+      border-radius: 50%;
+      background: radial-gradient(circle,
+        rgba(184,40,72,0) 0%, transparent 70%
+      );
+      pointer-events: none; z-index: 1;
+      transition: background 1s ease;
+    }
+    .sentence-glow.pulse {
+      background: radial-gradient(circle,
+        rgba(184,40,72,0.07) 0%, transparent 70%
+      );
+    }
+
+    /* WAVEFORM — visual "voice" bars */
+    .waveform-wrap {
+      position: relative; z-index: 2;
+      width: 100%; max-width: 300px;
+      height: 40px;
+      margin: 0 auto clamp(20px,5vw,36px);
+      display: flex; align-items: center;
+      justify-content: center; gap: 3px;
+    }
+    .wave-bar {
+      width: 3px;
+      border-radius: 3px;
+      background: linear-gradient(to top, var(--rose), var(--gold2));
+      opacity: 0.6;
+      animation: waveIdle 1.4s ease-in-out infinite;
+      transform-origin: bottom;
+    }
+    @keyframes waveIdle {
+      0%,100% { transform: scaleY(0.3); opacity: 0.3; }
+      50%      { transform: scaleY(var(--h,1)); opacity: 0.8; }
+    }
+    .wave-bar.speaking {
+      animation: waveSpeaking 0.45s ease-in-out infinite alternate;
+    }
+    @keyframes waveSpeaking {
+      0%   { transform: scaleY(calc(var(--h,1) * 0.4)); opacity: 0.5; }
+      100% { transform: scaleY(var(--h,1));              opacity: 1; }
+    }
+
+    /* sentence progress dots */
+    .progress-dots {
+      position: relative; z-index: 2;
+      display: flex; gap: 7px;
+      justify-content: center; align-items: center;
+      flex-wrap: wrap; max-width: 200px;
+      margin: 0 auto;
+    }
+    .pdot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: rgba(128,96,112,0.3);
+      transition: all 0.4s ease;
+      flex-shrink: 0;
+    }
+    .pdot.done { background: var(--rose-dim, #701830); }
+    .pdot.active {
+      background: var(--rose);
+      box-shadow: 0 0 6px rgba(184,40,72,0.7);
+      transform: scale(1.4);
+    }
+
+    /* skip hint */
+    .skip-hint {
+      position: absolute; bottom: 28px;
+      left: 0; right: 0; text-align: center;
+      font-size: 0.62rem; letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(128,96,112,0.35);
+      z-index: 2;
+    }
+
+    /* ══════════════════════════════════════
+       SCENE 3 — NAME WRITTEN IN LIGHT
+    ══════════════════════════════════════ */
+    #scene-signature {
+      text-align: center;
+      flex-direction: column;
+    }
+
+    #sig-canvas {
+      width: min(340px, 85vw);
+      height: 140px;
+      margin: 0 auto 0;
+      display: block;
+    }
+
+    .sig-from-label {
+      font-size: 0.65rem; letter-spacing: 0.2em;
+      text-transform: uppercase; color: var(--mauve);
+      margin-bottom: 12px; opacity: 0;
+      transition: opacity 0.8s ease;
+    }
+    .sig-from-label.show { opacity: 1; }
+
+    .sig-forever {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(0.95rem,3.5vw,1.2rem);
+      color: rgba(253,240,224,0.45);
+      letter-spacing: 0.1em;
+      margin-bottom: 44px;
+      opacity: 0;
+      transition: opacity 0.9s ease 0.2s;
+    }
+    .sig-forever.show { opacity: 1; }
+
+    /* share section */
+    .sig-share {
+      opacity: 0;
+      transition: opacity 0.9s ease 0.4s;
+    }
+    .sig-share.show { opacity: 1; }
+
+    .share-label {
+      font-size: 0.65rem; letter-spacing: 0.16em;
+      text-transform: uppercase; color: var(--mauve);
+      margin-bottom: 14px;
+    }
+    .share-row {
+      display: flex; gap: 10px;
+      flex-wrap: wrap; justify-content: center;
+      margin-bottom: 18px;
+    }
+    .share-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: 'DM Sans', sans-serif; font-size: 0.82rem;
+      font-weight: 500; padding: 11px 20px;
+      border-radius: 100px; border: none; cursor: pointer;
+      text-decoration: none; white-space: nowrap;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .share-btn:hover { transform: translateY(-2px); }
+    .btn-wa  { background:#25D366; color:#fff; box-shadow:0 4px 14px rgba(37,211,102,0.28); }
+    .btn-ms  { background:#0078FF; color:#fff; box-shadow:0 4px 14px rgba(0,120,255,0.28); }
+    .btn-cp  { background:rgba(253,240,224,0.07); color:var(--cream); border:1px solid rgba(253,240,224,0.14); }
+
+    .expiry-line {
+      font-size: 0.7rem; color: rgba(128,96,112,0.45);
+      display: flex; align-items: center;
+      justify-content: center; gap: 6px; margin-bottom: 10px;
+    }
+    .exp-dot {
+      width: 4px; height: 4px; border-radius: 50%;
+      background: var(--rose);
+      animation: lampBreath 2.4s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+    .brand-line {
+      font-size: 0.67rem; color: rgba(128,96,112,0.32);
+    }
+    .brand-line a { color:rgba(184,40,72,0.42); text-decoration:none; }
+    .brand-line a:hover { color:var(--rose); }
+
+    /* ══════════════════════════════════════
+       HEARTBEAT FLASH (full screen pulse)
+    ══════════════════════════════════════ */
+    #heartbeat-flash {
+      position: fixed; inset: 0; z-index: 200;
+      background: radial-gradient(ellipse at 50% 50%,
+        rgba(184,40,72,0.12) 0%, transparent 70%
+      );
+      pointer-events: none; opacity: 0;
+      transition: opacity 0.1s ease;
+    }
+    #heartbeat-flash.beat { opacity: 1; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ambient -->
+<canvas id="rain-canvas"></canvas>
+<div id="lamp-glow"></div>
+<div id="top-glow"></div>
+<div id="heartbeat-flash"></div>
+
+<!-- LOADING -->
+<div class="scene active" id="scene-loading">
+  <span class="load-candle">🕯️</span>
+  <div class="load-text">Preparing a confession...</div>
+</div>
+
+<!-- ERROR -->
+<div class="scene" id="scene-error">
+  <span class="err-icon">🕯️</span>
+  <div class="err-title">This confession has faded</div>
+  <p class="err-body">Some things are only said once,<br/>in the dark, for a single moment.<br/>This one has passed — but it was meant.</p>
+</div>
+
+<!-- SCENE 1: WAIT -->
+<div class="scene" id="scene-wait">
+  <div class="wait-time" id="wait-time">—</div>
+
+  <div class="candle-wrap">
+    <div class="candle-flame">
+      <div class="flame-outer"></div>
+      <div class="flame-core"></div>
+    </div>
+    <div class="candle-wick"></div>
+    <div class="candle-body"></div>
+    <div class="candle-glow-ring"></div>
+  </div>
+
+  <div class="wait-for-who">a midnight confession for</div>
+  <div class="wait-name" id="wait-name">—</div>
+
+  <button class="tap-btn" onclick="startPlayback()">
+    <div class="tap-circle">🕯️</div>
+    <span class="tap-label">tap to listen</span>
+  </button>
+</div>
+
+<!-- SCENE 2: PLAYBACK -->
+<div class="scene" id="scene-play">
+  <canvas id="heartbeat-canvas"></canvas>
+
+  <div class="play-from" id="play-from">from —</div>
+
+  <div class="sentence-stage">
+    <div class="sentence-glow" id="sentence-glow"></div>
+    <div class="sentence" id="sentence-a"></div>
+    <div class="sentence" id="sentence-b"></div>
+  </div>
+
+  <div class="waveform-wrap" id="waveform"></div>
+
+  <div class="progress-dots" id="progress-dots"></div>
+
+  <div class="skip-hint">tap anywhere to skip ahead</div>
+</div>
+
+<!-- SCENE 3: SIGNATURE -->
+<div class="scene" id="scene-signature">
+  <div class="sig-from-label" id="sig-from-label">with everything i am,</div>
+  <canvas id="sig-canvas"></canvas>
+  <div class="sig-forever" id="sig-forever">yours. always. completely.</div>
+
+  <div class="sig-share" id="sig-share">
+    <div class="share-label">share this moment</div>
+    <div class="share-row">
+      <a class="share-btn btn-wa" id="btn-wa" href="#" target="_blank">📱 WhatsApp</a>
+      <a class="share-btn btn-ms" id="btn-ms" href="#" target="_blank">💬 Messenger</a>
+      <button class="share-btn btn-cp" id="btn-cp" onclick="copyLink()">📋 Copy link</button>
+    </div>
+    <div class="expiry-line">
+      <div class="exp-dot"></div>
+      <span id="expiry-text">This confession expires in 24 hours</span>
+    </div>
+    <div class="brand-line">
+      Created with <a href="https://loversgift.io">LoversGift</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ─── CONFIG ─────────────────────────────────────────────────
+  const API_BASE = 'https://your-app.railway.app'; // ← YOUR RAILWAY URL
+
+  // ─── STATE ──────────────────────────────────────────────────
+  let giftData   = null;
+  let sentences  = [];
+  let currentIdx = 0;
+  let playing    = false;
+  let skipFlag   = false;
+  let activeSlot = 'a'; // alternates between sentence-a and sentence-b
+
+  // ─── RAIN CANVAS ─────────────────────────────────────────────
+  (function initRain() {
+    const canvas = document.getElementById('rain-canvas');
+    const ctx    = canvas.getContext('2d');
+    let W, H;
+    const drops  = [];
+
+    function resize() {
+      W = canvas.width  = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // create rain drops
+    for (let i = 0; i < 120; i++) {
+      drops.push({
+        x:     Math.random() * 1200,
+        y:     Math.random() * 800,
+        len:   8 + Math.random() * 14,
+        speed: 6 + Math.random() * 8,
+        alpha: 0.03 + Math.random() * 0.07,
+      });
+    }
+
+    function drawRain() {
+      ctx.clearRect(0, 0, W, H);
+      ctx.strokeStyle = 'rgba(180,200,255,1)';
+      ctx.lineWidth = 0.6;
+      for (const d of drops) {
+        ctx.globalAlpha = d.alpha;
+        ctx.beginPath();
+        ctx.moveTo(d.x, d.y);
+        ctx.lineTo(d.x - 1, d.y + d.len);
+        ctx.stroke();
+        d.y += d.speed;
+        if (d.y > H + 20) { d.y = -20; d.x = Math.random() * W; }
+      }
+      ctx.globalAlpha = 1;
+      requestAnimationFrame(drawRain);
+    }
+    drawRain();
+  })();
+
+  // ─── HEARTBEAT CANVAS ─────────────────────────────────────────
+  (function initHeartbeat() {
+    const canvas = document.getElementById('heartbeat-canvas');
+    const ctx    = canvas.getContext('2d');
+    let W, H;
+
+    function resize() {
+      W = canvas.width  = canvas.offsetWidth;
+      H = canvas.height = canvas.offsetHeight;
+    }
+
+    // draw a resting ECG line
+    function draw(phase = 0) {
+      if (!W) return;
+      ctx.clearRect(0, 0, W, H);
+      ctx.strokeStyle = 'rgba(184,40,72,0.7)';
+      ctx.lineWidth   = 1.5;
+      ctx.beginPath();
+
+      const mid = H / 2;
+      const step = W / 120;
+
+      for (let i = 0; i < 120; i++) {
+        const x = i * step;
+        let y = mid;
+        const p = (i + phase) % 120;
+        // ECG spike pattern every 60 steps
+        if (p === 20) y = mid + 4;
+        else if (p === 21) y = mid - 28;
+        else if (p === 22) y = mid + 18;
+        else if (p === 23) y = mid - 6;
+        else if (p === 24) y = mid;
+
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    let offset = 0;
+    function animate() {
+      resize();
+      draw(offset);
+      offset = (offset + 0.6) % 120;
+      requestAnimationFrame(animate);
+    }
+    animate();
+  })();
+
+  // ─── WAVEFORM BARS ────────────────────────────────────────────
+  const WAVE_HEIGHTS = [0.3,0.5,0.8,1,0.9,0.6,0.4,0.7,1,0.85,0.55,0.35,
+                        0.6,0.95,0.7,0.4,0.8,1,0.65,0.5];
+  function buildWaveform() {
+    const wrap = document.getElementById('waveform');
+    wrap.innerHTML = '';
+    WAVE_HEIGHTS.forEach((h, i) => {
+      const bar = document.createElement('div');
+      bar.className = 'wave-bar';
+      const baseH  = 10 + h * 30;
+      bar.style.height = `${baseH}px`;
+      bar.style.setProperty('--h', h);
+      bar.style.animationDelay = `${i * 0.07}s`;
+      wrap.appendChild(bar);
+    });
+  }
+
+  function setWaveformSpeaking(active) {
+    document.querySelectorAll('.wave-bar').forEach(b => {
+      b.classList.toggle('speaking', active);
+    });
+  }
+
+  // ─── HEARTBEAT FLASH ──────────────────────────────────────────
+  function triggerHeartbeat() {
+    const el = document.getElementById('heartbeat-flash');
+    el.classList.add('beat');
+    setTimeout(() => el.classList.remove('beat'), 120);
+  }
+
+  // ─── SCENE SWITCHER ───────────────────────────────────────────
+  function goToScene(id) {
+    document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  // ─── PARSE SENTENCES ──────────────────────────────────────────
+  // Split message into sentences — split on . ! ? — or double newline
+  function parseSentences(message) {
+    if (!message) return ['I wanted to tell you this.'];
+    const raw = message
+      .split(/(?<=[.!?—])\s+|\n\n+/)
+      .map(s => s.trim())
+      .filter(s => s.length > 1);
+    return raw.length > 0 ? raw : [message.trim()];
+  }
+
+  // ─── PLAYBACK ENGINE ──────────────────────────────────────────
+  // Each sentence:
+  //   1. previous sentence fades OUT (500ms)
+  //   2. heartbeat pulse
+  //   3. new sentence fades IN (1200ms)
+  //   4. sentence HOLDS (reading time based on word count)
+  //   5. repeat
+
+  function startPlayback() {
+    goToScene('scene-play');
+    document.getElementById('play-from').textContent =
+      giftData.senderName ? `from ${giftData.senderName}` : '—';
+
+    buildProgressDots();
+    buildWaveform();
+
+    // tap anywhere to skip
+    document.getElementById('scene-play').addEventListener('click', () => {
+      skipFlag = true;
+    });
+
+    playing = true;
+    playNext();
+  }
+
+  function buildProgressDots() {
+    const wrap = document.getElementById('progress-dots');
+    wrap.innerHTML = '';
+    const max = Math.min(sentences.length, 12);
+    for (let i = 0; i < max; i++) {
+      const d = document.createElement('div');
+      d.className = 'pdot';
+      d.id = `pdot-${i}`;
+      wrap.appendChild(d);
+    }
+  }
+
+  function updateDots(idx) {
+    const max = Math.min(sentences.length, 12);
+    for (let i = 0; i < max; i++) {
+      const d = document.getElementById(`pdot-${i}`);
+      if (!d) continue;
+      d.classList.toggle('done',   i < idx);
+      d.classList.toggle('active', i === idx);
+    }
+  }
+
+  function readingTime(text) {
+    // ~180 words/min for reading, min 2.2s, max 7s
+    const words = text.split(' ').length;
+    return Math.min(7000, Math.max(2200, (words / 180) * 60000));
+  }
+
+  async function playNext() {
+    if (!playing) return;
+
+    if (currentIdx >= sentences.length) {
+      // All done — go to signature scene
+      setTimeout(showSignature, 800);
+      return;
+    }
+
+    const text      = sentences[currentIdx];
+    const slotId    = `sentence-${activeSlot}`;
+    const otherSlot = activeSlot === 'a' ? 'b' : 'a';
+    const otherId   = `sentence-${otherSlot}`;
+
+    // update dots
+    updateDots(currentIdx);
+
+    // fade OUT previous sentence
+    const prevEl = document.getElementById(otherId);
+    prevEl.classList.remove('in');
+    prevEl.classList.add('out');
+
+    // heartbeat
+    setTimeout(triggerHeartbeat, 300);
+
+    // set new sentence text
+    await wait(skipFlag ? 100 : 500);
+    skipFlag = false;
+
+    const curEl = document.getElementById(slotId);
+    curEl.textContent = text;
+    curEl.classList.remove('out');
+
+    // pulse the glow
+    const glow = document.getElementById('sentence-glow');
+    glow.classList.add('pulse');
+
+    // waveform active
+    setWaveformSpeaking(true);
+
+    // fade IN
+    await wait(40);
+    curEl.classList.add('in');
+
+    // hold for reading time
+    const hold = readingTime(text);
+    await waitInterruptible(hold);
+
+    // fade out waveform activity
+    setWaveformSpeaking(false);
+    glow.classList.remove('pulse');
+
+    // advance
+    currentIdx++;
+    activeSlot = otherSlot;
+    playNext();
+  }
+
+  function wait(ms) {
+    return new Promise(r => setTimeout(r, ms));
+  }
+
+  function waitInterruptible(ms) {
+    return new Promise(resolve => {
+      const start = Date.now();
+      const check = () => {
+        if (skipFlag || Date.now() - start >= ms) {
+          resolve();
+        } else {
+          setTimeout(check, 80);
+        }
+      };
+      setTimeout(check, 80);
+    });
+  }
+
+  // ─── SIGNATURE — name written in light ────────────────────────
+  function showSignature() {
+    goToScene('scene-signature');
+
+    const name = giftData.senderName || '∞';
+
+    // delay UI elements
+    setTimeout(() => document.getElementById('sig-from-label').classList.add('show'), 200);
+    setTimeout(() => drawNameInLight(name), 600);
+    setTimeout(() => document.getElementById('sig-forever').classList.add('show'), 1400);
+    setTimeout(() => document.getElementById('sig-share').classList.add('show'), 2200);
+  }
+
+  // Draw the sender's name as a glowing handwritten path on canvas
+  function drawNameInLight(name) {
+    const canvas = document.getElementById('sig-canvas');
+    const ctx    = canvas.getContext('2d');
+    const W      = canvas.width  = canvas.offsetWidth;
+    const H      = canvas.height = canvas.offsetHeight;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // We'll render the name using canvas text with a drawOn effect
+    // using clip + progressive reveal
+    ctx.font = `bold ${Math.min(72, W * 0.18)}px 'Dancing Script', cursive`;
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+
+    const totalChars = name.length;
+    let revealed = 0;
+
+    // Build gradient
+    const grad = ctx.createLinearGradient(W * 0.2, 0, W * 0.8, 0);
+    grad.addColorStop(0,   '#C08840');
+    grad.addColorStop(0.5, '#F5CC80');
+    grad.addColorStop(1,   '#C08840');
+
+    function drawFrame() {
+      ctx.clearRect(0, 0, W, H);
+
+      // glow layers
+      ctx.save();
+      ctx.filter = 'blur(12px)';
+      ctx.globalAlpha = 0.35;
+      ctx.fillStyle = '#C08840';
+      ctx.fillText(name.slice(0, revealed), W / 2, H / 2);
+      ctx.restore();
+
+      ctx.save();
+      ctx.filter = 'blur(5px)';
+      ctx.globalAlpha = 0.5;
+      ctx.fillStyle = '#E0AA60';
+      ctx.fillText(name.slice(0, revealed), W / 2, H / 2);
+      ctx.restore();
+
+      // crisp top layer
+      ctx.save();
+      ctx.globalAlpha = 1;
+      ctx.fillStyle   = grad;
+      ctx.shadowColor = 'rgba(192,136,64,0.8)';
+      ctx.shadowBlur  = 18;
+      ctx.fillText(name.slice(0, revealed), W / 2, H / 2);
+      ctx.restore();
+
+      // leading particle spark
+      if (revealed < totalChars) {
+        const partial = name.slice(0, revealed + 1);
+        const measured = ctx.measureText(partial);
+        const sparkX = W / 2 - ctx.measureText(name).width / 2 + measured.width;
+        const sparkY = H / 2;
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(sparkX, sparkY, 4, 0, Math.PI * 2);
+        ctx.fillStyle = '#FFF8C0';
+        ctx.shadowColor = '#F5CC80';
+        ctx.shadowBlur  = 16;
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    // animate letter by letter
+    const interval = Math.max(60, 1000 / totalChars);
+    const timer = setInterval(() => {
+      revealed++;
+      drawFrame();
+      if (revealed >= totalChars) {
+        clearInterval(timer);
+        // final heartbeat pulse
+        triggerHeartbeat();
+        // lingering sparkle
+        lingering(ctx, W, H);
+      }
+    }, interval);
+  }
+
+  function lingering(ctx, W, H) {
+    let frame = 0;
+    const sparkles = Array.from({ length: 14 }, () => ({
+      x: W * (0.2 + Math.random() * 0.6),
+      y: H * (0.2 + Math.random() * 0.6),
+      r: 1 + Math.random() * 3,
+      alpha: Math.random(),
+      speed: 0.02 + Math.random() * 0.03,
+      phase: Math.random() * Math.PI * 2,
+    }));
+
+    function drawSparkles() {
+      if (frame++ > 180) return; // stop after ~6s
+      for (const s of sparkles) {
+        const a = 0.3 * (0.5 + 0.5 * Math.sin(frame * s.speed + s.phase));
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(245,204,128,${a.toFixed(2)})`;
+        ctx.shadowColor = '#F5CC80';
+        ctx.shadowBlur  = 6;
+        ctx.fill();
+        ctx.restore();
+      }
+      requestAnimationFrame(drawSparkles);
+    }
+    drawSparkles();
+  }
+
+  // ─── SHARE / EXPIRY ───────────────────────────────────────────
+  function populateShare(gift) {
+    const url   = gift.shareUrl || window.location.href;
+    const waMsg = encodeURIComponent(`🕯️ Someone made a midnight confession for you → ${url}`);
+    document.getElementById('btn-wa').href = `https://wa.me/?text=${waMsg}`;
+    document.getElementById('btn-ms').href = `fb-messenger://share/?link=${encodeURIComponent(url)}`;
+    setExpiryText(gift.expiresAt);
+  }
+
+  function setExpiryText(expiresAt) {
+    const el = document.getElementById('expiry-text');
+    if (!expiresAt || !el) return;
+    function update() {
+      const ms = new Date(expiresAt) - Date.now();
+      if (ms <= 0) { el.textContent = 'This confession has expired'; return; }
+      const h = Math.floor(ms / 3600000);
+      const m = Math.floor((ms % 3600000) / 60000);
+      const s = Math.floor((ms % 60000)   / 1000);
+      el.textContent = h > 1
+        ? `This confession expires in ${h}h ${m}m`
+        : `This confession expires in ${h}h ${m}m ${s}s`;
+    }
+    update();
+    setInterval(update, 1000);
+  }
+
+  function copyLink() {
+    const link = giftData?.shareUrl || window.location.href;
+    navigator.clipboard.writeText(link).then(() => {
+      const btn  = document.getElementById('btn-cp');
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copied!';
+      btn.style.background = 'rgba(76,175,80,0.15)';
+      btn.style.color = '#81c784';
+      setTimeout(() => { btn.textContent = orig; btn.style.background = ''; btn.style.color = ''; }, 2500);
+    });
+  }
+
+  // ─── WAIT SCREEN CLOCK ────────────────────────────────────────
+  function setWaitTime() {
+    const el = document.getElementById('wait-time');
+    if (!el) return;
+    const now = new Date();
+    const h   = now.getHours();
+    const m   = now.getMinutes();
+    const ap  = h >= 12 ? 'pm' : 'am';
+    const h12 = ((h % 12) || 12).toString().padStart(2, '0');
+    const mm  = m.toString().padStart(2, '0');
+    el.textContent = `${h12}:${mm} ${ap}`;
+  }
+
+  // ─── DEMO DATA ────────────────────────────────────────────────
+  const DEMO_GIFT = {
+    receiverName: 'Sofia',
+    senderName:   'Marco',
+    message:
+      'I have been trying to find the right moment to say this, and I realised there is no right moment — there is only now.\n\n' +
+      'You changed something in me. Something I did not know needed changing.\n\n' +
+      'The way you look when you are concentrating — eyebrows just slightly furrowed, like the world needs your full attention — I have memorised that.\n\n' +
+      'I think about you in the strangest moments. In the middle of ordinary things. And it does not feel strange at all.\n\n' +
+      'I am not good at saying this out loud. But here, in the dark, I can tell you: I love you. More than I have ever said. More than I probably will say.\n\n' +
+      'I just needed you to know.',
+    theme:     'rose',
+    expiresAt: new Date(Date.now() + 23 * 3600 * 1000).toISOString(),
+    shareUrl:  window.location.href,
+  };
+
+  // ─── LOAD GIFT ────────────────────────────────────────────────
+  async function loadGift() {
+    let code = '';
+    const parts = window.location.pathname.split('/');
+    const gIdx  = parts.indexOf('g');
+    if (gIdx !== -1 && parts[gIdx + 1]) code = parts[gIdx + 1];
+    else code = new URLSearchParams(window.location.search).get('code') || '';
+
+    const useDemo = window.location.search.includes('demo');
+
+    if (!code && !useDemo) {
+      goToScene('scene-error');
+      return;
+    }
+
+    try {
+      if (!useDemo) {
+        const resp = await fetch(`${API_BASE}/api/gifts/${code}/view`);
+        const data = await resp.json();
+        if (!resp.ok || data.expired || data.error) {
+          goToScene('scene-error');
+          return;
+        }
+        giftData = data.gift;
+      } else {
+        giftData = DEMO_GIFT;
+      }
+
+      sentences = parseSentences(giftData.message);
+
+      // Populate wait screen
+      setWaitTime();
+      document.getElementById('wait-name').textContent = giftData.receiverName || 'you';
+      populateShare(giftData);
+
+      // Brief loading pause then show wait screen
+      await new Promise(r => setTimeout(r, 1200));
+      goToScene('scene-wait');
+
+    } catch {
+      if (useDemo) {
+        giftData  = DEMO_GIFT;
+        sentences = parseSentences(giftData.message);
+        setWaitTime();
+        document.getElementById('wait-name').textContent = giftData.receiverName || 'you';
+        populateShare(giftData);
+        await new Promise(r => setTimeout(r, 1200));
+        goToScene('scene-wait');
+      } else {
+        goToScene('scene-error');
+      }
+    }
+  }
+
+  loadGift();
+</script>
+</body>
+</html>

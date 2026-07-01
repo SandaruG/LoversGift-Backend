@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Our Little World 🔐</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500;1,600&family=DM+Sans:wght@300;400;500;600&family=Dancing+Script:wght@500;600;700&family=Special+Elite&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --night:   #040208;
+      --deep:    #08040E;
+      --rose:    #B82848;
+      --rose2:   #D84868;
+      --rose3:   #FF8098;
+      --gold:    #C08840;
+      --gold2:   #E0A850;
+      --gold3:   #F8CC70;
+      --gold4:   #FFF0B0;
+      --cream:   #FDF5E8;
+      --paper:   #F8EDDA;
+      --paper2:  #EEE0C4;
+      --ink:     #1C0E06;
+      --ink2:    #3A2010;
+      --mauve:   #907080;
+      --mauve2:  #604050;
+      --teal:    #1A9080;
+      --teal2:   #40C0A8;
+      --violet:  #7030C0;
+      --violet2: #A060E0;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--night);
+      color: var(--cream);
+      font-family: 'DM Sans', sans-serif;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ══════════════════════════════════════
+       STARFIELD — fixed behind all
+    ══════════════════════════════════════ */
+    #star-canvas {
+      position: fixed; inset: 0;
+      z-index: 0; pointer-events: none;
+    }
+
+    /* ambient glow layers */
+    .amb {
+      position: fixed; border-radius: 50%;
+      pointer-events: none; z-index: 1;
+      animation: ambBreath ease-in-out infinite alternate;
+    }
+    @keyframes ambBreath {
+      from { opacity: 0.6; transform: scale(1); }
+      to   { opacity: 1;   transform: scale(1.1); }
+    }
+    #amb1 { width:70vw; height:70vw; top:-20vw; left:-15vw;
+      background:radial-gradient(circle,rgba(184,40,72,0.07) 0%,transparent 70%);
+      animation-duration:11s; }
+    #amb2 { width:50vw; height:50vw; bottom:-10vw; right:-10vw;
+      background:radial-gradient(circle,rgba(192,136,64,0.06) 0%,transparent 70%);
+      animation-duration:8s; }
+    #amb3 { width:40vw; height:40vw; top:40%; left:55%;
+      background:radial-gradient(circle,rgba(112,48,192,0.05) 0%,transparent 70%);
+      animation-duration:13s; }
+
+    /* ══════════════════════════════════════
+       LOADING
+    ══════════════════════════════════════ */
+    #loading {
+      position: fixed; inset: 0; z-index: 600;
+      background: var(--night);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      transition: opacity 1s ease;
+    }
+    #loading.out  { opacity: 0; pointer-events: none; }
+    #loading.gone { display: none; }
+    .load-icon {
+      font-size: 2.6rem; margin-bottom: 18px;
+      animation: lockPulse 2s ease-in-out infinite;
+    }
+    @keyframes lockPulse {
+      0%,100%{ transform:scale(1) rotate(-3deg); }
+      50%    { transform:scale(1.1) rotate(3deg); }
+    }
+    .load-text {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic; font-size: 1rem;
+      color: var(--mauve); letter-spacing: 0.1em;
+      margin-bottom: 20px;
+    }
+    .load-dots { display:flex; gap:8px; }
+    .load-dot {
+      width:6px; height:6px; border-radius:50%;
+      background: var(--rose);
+      animation: dotBounce 1.2s ease-in-out infinite;
+    }
+    .load-dot:nth-child(2){ animation-delay:0.2s; background:var(--gold2); }
+    .load-dot:nth-child(3){ animation-delay:0.4s; background:var(--violet2); }
+    @keyframes dotBounce {
+      0%,100%{ transform:translateY(0); }
+      50%    { transform:translateY(-8px); }
+    }
+
+    /* ══════════════════════════════════════
+       ERROR
+    ══════════════════════════════════════ */
+    #error {
+      display:none; position:fixed; inset:0; z-index:500;
+      background:var(--night);
+      align-items:center; justify-content:center;
+      flex-direction:column; text-align:center; padding:40px;
+    }
+    #error.show { display:flex; }
+    .err-icon { font-size:3rem; margin-bottom:18px; }
+    .err-head {
+      font-family:'Cormorant Garamond',serif;
+      font-size:1.7rem; font-style:italic;
+      color:var(--cream); margin-bottom:10px;
+    }
+    .err-body { font-size:0.88rem; color:var(--mauve); line-height:1.7; }
+
+    /* ══════════════════════════════════════
+       DOOR / OPENING SCENE
+    ══════════════════════════════════════ */
+    #scene-door {
+      position: fixed; inset: 0; z-index: 50;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 40px 24px;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.9s ease;
+    }
+    #scene-door.show { opacity: 1; pointer-events: all; }
+    #scene-door.out  {
+      opacity: 0; transform: scale(1.06);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+      pointer-events: none;
+    }
+
+    .door-eyebrow {
+      font-size: 0.62rem; letter-spacing: 0.22em;
+      text-transform: uppercase; color: var(--mauve);
+      margin-bottom: 20px; opacity: 0;
+      animation: doorFadeUp 0.8s ease 0.3s forwards;
+    }
+    @keyframes doorFadeUp {
+      from { opacity:0; transform:translateY(10px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+
+    .door-title {
+      font-family: 'Dancing Script', cursive;
+      font-size: clamp(2.4rem, 9vw, 4rem);
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--rose2), var(--gold2), var(--rose3));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-align: center; line-height: 1.1;
+      filter: drop-shadow(0 0 24px rgba(184,40,72,0.35));
+      margin-bottom: 6px;
+      opacity: 0; animation: doorFadeUp 0.9s ease 0.6s forwards;
+    }
+    .door-names {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(1rem, 3.5vw, 1.25rem);
+      color: rgba(253,245,232,0.55);
+      text-align: center; letter-spacing: 0.08em;
+      margin-bottom: clamp(36px, 8vw, 60px);
+      opacity: 0; animation: doorFadeUp 0.8s ease 0.9s forwards;
+    }
+
+    /* the door SVG */
+    .door-wrap {
+      position: relative; cursor: pointer;
+      width: min(200px, 52vw);
+      opacity: 0; animation: doorFadeUp 0.9s ease 1.2s forwards;
+      filter: drop-shadow(0 16px 48px rgba(0,0,0,0.7))
+              drop-shadow(0 0 30px rgba(184,40,72,0.15));
+      transition: filter 0.3s ease;
+      margin-bottom: 36px;
+    }
+    .door-wrap:hover {
+      filter: drop-shadow(0 16px 48px rgba(0,0,0,0.7))
+              drop-shadow(0 0 50px rgba(192,136,64,0.35));
+    }
+    .door-svg { width: 100%; display: block; }
+
+    /* door swing open animation */
+    .door-panel {
+      transform-origin: left center;
+      transform-style: preserve-3d;
+      transition: transform 0.9s cubic-bezier(0.4,0,0.2,1);
+    }
+    .door-wrap.opening .door-panel {
+      transform: perspective(600px) rotateY(-75deg);
+    }
+
+    .door-hint {
+      font-size: 0.65rem; letter-spacing: 0.18em;
+      text-transform: uppercase; color: rgba(144,112,128,0.5);
+      opacity: 0; animation: doorFadeUp 0.8s ease 1.8s forwards;
+      animation-fill-mode: both;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .hint-line { width: 28px; height: 1px; background: rgba(144,112,128,0.25); }
+
+    /* ══════════════════════════════════════
+       MAIN SCROLL BODY
+    ══════════════════════════════════════ */
+    #main-body {
+      display: none; /* shown after door opens */
+      position: relative; z-index: 10;
+      min-height: 100dvh;
+    }
+    #main-body.show { display: block; }
+
+    /* ── CHAPTER SYSTEM ──────────────────── */
+    .chapter {
+      position: relative;
+      width: 100%;
+      min-height: 100dvh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: clamp(60px, 12vw, 100px) clamp(20px, 5vw, 48px);
+      overflow: hidden;
+    }
+
+    /* chapter label tab */
+    .ch-tab {
+      position: absolute; top: clamp(24px, 5vw, 40px); left: 50%;
+      transform: translateX(-50%);
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 0.62rem; letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 6px 16px; border-radius: 100px;
+      border: 1px solid;
+      white-space: nowrap;
+      opacity: 0; transition: opacity 0.8s ease;
+    }
+    .chapter.revealed .ch-tab { opacity: 1; }
+
+    /* scroll-reveal for chapters */
+    .ch-content {
+      opacity: 0; transform: translateY(24px);
+      transition: opacity 0.9s ease 0.15s, transform 0.9s ease 0.15s;
+      width: 100%; max-width: 640px;
+    }
+    .chapter.revealed .ch-content { opacity: 1; transform: translateY(0); }
+
+    /* chapter divider */
+    .ch-divider {
+      width: 100%; max-width: 480px;
+      margin: 0 auto;
+      display: flex; align-items: center; gap: 16px;
+      opacity: 0; transition: opacity 0.8s ease;
+    }
+    .ch-divider.show { opacity: 1; }
+    .ch-div-line { flex:1; height:1px; background:linear-gradient(to right,transparent,rgba(144,112,128,0.2),transparent); }
+    .ch-div-dot  { font-size:0.8rem; color:rgba(144,112,128,0.4); }
+
+    /* ══════════════════════════════════════
+       CHAPTER 1 — OUR SONG
+    ══════════════════════════════════════ */
+    #ch-song {
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 0%, rgba(26,144,128,0.06) 0%, transparent 60%),
+        linear-gradient(180deg, rgba(4,2,8,0) 0%, rgba(8,4,14,0.4) 100%);
+    }
+    #ch-song .ch-tab { color:var(--teal2); border-color:rgba(64,192,168,0.25); background:rgba(26,144,128,0.08); }
+
+    .song-scene {
+      display: flex; flex-direction: column;
+      align-items: center; gap: clamp(24px, 5vw, 40px);
+    }
+
+    /* vinyl record */
+    .vinyl-wrap {
+      position: relative;
+      width: clamp(180px, 48vw, 240px);
+      height: clamp(180px, 48vw, 240px);
+      flex-shrink: 0;
+    }
+    .vinyl {
+      width: 100%; height: 100%;
+      border-radius: 50%;
+      background: conic-gradient(
+        #0A0A0A 0deg, #1A1A1A 10deg, #0A0A0A 20deg,
+        #1A1A1A 30deg, #0A0A0A 40deg, #1A1A1A 50deg,
+        #0A0A0A 60deg, #1A1A1A 70deg, #0A0A0A 80deg,
+        #1A1A1A 90deg, #0A0A0A 100deg,#1A1A1A 110deg,
+        #0A0A0A 120deg,#1A1A1A 130deg,#0A0A0A 140deg,
+        #1A1A1A 150deg,#0A0A0A 160deg,#1A1A1A 170deg,
+        #0A0A0A 180deg,#1A1A1A 190deg,#0A0A0A 200deg,
+        #1A1A1A 210deg,#0A0A0A 220deg,#1A1A1A 230deg,
+        #0A0A0A 240deg,#1A1A1A 250deg,#0A0A0A 260deg,
+        #1A1A1A 270deg,#0A0A0A 280deg,#1A1A1A 290deg,
+        #0A0A0A 300deg,#1A1A1A 310deg,#0A0A0A 320deg,
+        #1A1A1A 330deg,#0A0A0A 340deg,#1A1A1A 350deg,#0A0A0A 360deg
+      );
+      box-shadow: 0 8px 40px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04);
+      animation: vinylSpin 4s linear infinite;
+      animation-play-state: paused;
+      position: relative;
+    }
+    .vinyl.spinning { animation-play-state: running; }
+    @keyframes vinylSpin { to { transform: rotate(360deg); } }
+
+    /* vinyl grooves */
+    .vinyl::before {
+      content: '';
+      position: absolute; inset: 15%;
+      border-radius: 50%;
+      background: conic-gradient(
+        #111 0deg, #1C1C1C 6deg, #111 12deg,
+        #1C1C1C 18deg, #111 24deg, #1C1C1C 30deg,
+        #111 36deg, #1C1C1C 42deg, #111 48deg,
+        #1C1C1C 54deg, #111 60deg, #1C1C1C 66deg,
+        #111 72deg, #1C1C1C 78deg, #111 84deg,
+        #1C1C1C 90deg, #111 96deg, #1C1C1C 102deg,
+        #111 108deg,#1C1C1C 114deg,#111 120deg,
+        #1C1C1C 126deg,#111 132deg,#1C1C1C 138deg,
+        #111 144deg,#1C1C1C 150deg,#111 156deg,
+        #1C1C1C 162deg,#111 168deg,#1C1C1C 174deg,
+        #111 180deg,#1C1C1C 186deg,#111 192deg,
+        #1C1C1C 198deg,#111 204deg,#1C1C1C 210deg,
+        #111 216deg,#1C1C1C 222deg,#111 228deg,
+        #1C1C1C 234deg,#111 240deg,#1C1C1C 246deg,
+        #111 252deg,#1C1C1C 258deg,#111 264deg,
+        #1C1C1C 270deg,#111 276deg,#1C1C1C 282deg,
+        #111 288deg,#1C1C1C 294deg,#111 300deg,
+        #1C1C1C 306deg,#111 312deg,#1C1C1C 318deg,
+        #111 324deg,#1C1C1C 330deg,#111 336deg,
+        #1C1C1C 342deg,#111 348deg,#1C1C1C 354deg,#111 360deg
+      );
+    }
+
+    /* label in the centre */
+    .vinyl::after {
+      content: '';
+      position: absolute; inset: 32%;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--rose) 0%, var(--rose-dim,#801830) 100%);
+      box-shadow: 0 0 16px rgba(184,40,72,0.6);
+    }
+    .vinyl-centre {
+      position: absolute; inset: 32%;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 2; pointer-events: none;
+    }
+    .vinyl-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.8);
+      box-shadow: 0 0 4px rgba(0,0,0,0.6);
+    }
+
+    /* tonearm */
+    .tonearm {
+      position: absolute;
+      top: 8%; right: 8%;
+      width: 45%; height: 45%;
+      transform-origin: top right;
+      transform: rotate(-20deg);
+      transition: transform 1.2s cubic-bezier(0.4,0,0.2,1);
+      z-index: 3;
+    }
+    .tonearm.playing { transform: rotate(0deg); }
+    .tonearm-body {
+      position: absolute; top: 0; right: 0;
+      width: 12px; height: 100%;
+      background: linear-gradient(to bottom, #888, #555, #888);
+      border-radius: 6px 6px 2px 2px;
+      transform: rotate(0deg);
+    }
+    .tonearm-head {
+      position: absolute; bottom: -4px; right: 1px;
+      width: 10px; height: 14px;
+      background: var(--gold);
+      border-radius: 2px;
+      box-shadow: 0 0 8px rgba(192,136,64,0.6);
+    }
+
+    .song-info {
+      text-align: center; max-width: 360px;
+    }
+    .song-label {
+      font-size: 0.62rem; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--teal2);
+      margin-bottom: 10px; opacity: 0.7;
+    }
+    .song-title {
+      font-family: 'Dancing Script', cursive;
+      font-size: clamp(1.6rem, 6vw, 2.4rem);
+      font-weight: 700; color: var(--cream);
+      line-height: 1.15; margin-bottom: 6px;
+      text-shadow: 0 0 20px rgba(64,192,168,0.3);
+    }
+    .song-artist {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(0.9rem, 3vw, 1.1rem);
+      color: rgba(253,245,232,0.5);
+      margin-bottom: 16px;
+    }
+    .song-memory {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(0.95rem, 3vw, 1.1rem);
+      color: rgba(253,245,232,0.65);
+      line-height: 1.7; margin-bottom: 20px;
+    }
+
+    .play-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem; font-weight: 500;
+      padding: 11px 24px; border-radius: 100px;
+      background: rgba(26,144,128,0.15);
+      border: 1px solid rgba(64,192,168,0.35);
+      color: var(--teal2); cursor: pointer;
+      transition: all 0.2s ease; outline: none;
+    }
+    .play-btn:hover {
+      background: rgba(26,144,128,0.28);
+      border-color: var(--teal2);
+      transform: translateY(-2px);
+    }
+    .play-btn.playing-state { color: var(--gold2); border-color: rgba(224,168,80,0.4); }
+
+    .spotify-embed {
+      display: none; margin-top: 16px;
+      width: 100%; max-width: 340px;
+      border-radius: 12px; overflow: hidden;
+    }
+    .spotify-embed.show { display: block; }
+    .spotify-embed iframe { width:100%; border:none; border-radius:12px; }
+
+    /* ══════════════════════════════════════
+       CHAPTER 2 — OUR PLACE
+    ══════════════════════════════════════ */
+    #ch-place {
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 100%, rgba(112,48,192,0.06) 0%, transparent 60%);
+    }
+    #ch-place .ch-tab { color:var(--violet2); border-color:rgba(160,96,224,0.25); background:rgba(112,48,192,0.08); }
+
+    .place-scene { display:flex; flex-direction:column; align-items:center; gap:clamp(24px,5vw,36px); }
+
+    /* map card */
+    .map-card {
+      position: relative;
+      width: min(320px, 90vw);
+      background: #0E0818;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(160,96,224,0.2);
+      box-shadow: 0 12px 48px rgba(0,0,0,0.6);
+    }
+
+    /* SVG world map silhouette */
+    .map-inner {
+      padding: 20px; position: relative;
+    }
+    .map-svg { width:100%; opacity:0.25; display:block; }
+
+    /* glowing pin */
+    .map-pin {
+      position: absolute;
+      transform: translate(-50%, -100%);
+      display: flex; flex-direction: column;
+      align-items: center;
+      animation: pinBob 2.5s ease-in-out infinite;
+      z-index: 2;
+      cursor: default;
+    }
+    @keyframes pinBob {
+      0%,100%{ transform:translate(-50%,-100%) translateY(0); }
+      50%    { transform:translate(-50%,-100%) translateY(-6px); }
+    }
+    .pin-icon {
+      font-size: 2rem;
+      filter: drop-shadow(0 0 12px rgba(160,96,224,0.8))
+              drop-shadow(0 4px 8px rgba(0,0,0,0.6));
+    }
+    .pin-pulse {
+      width: 24px; height: 12px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(160,96,224,0.4) 0%, transparent 70%);
+      animation: pulseShadow 2.5s ease-in-out infinite;
+      margin-top: -4px;
+    }
+    @keyframes pulseShadow {
+      0%,100%{ transform:scaleX(1); opacity:0.6; }
+      50%    { transform:scaleX(0.7); opacity:0.3; }
+    }
+    .pin-label {
+      position: absolute;
+      top: -32px; left: 50%; transform: translateX(-50%);
+      background: rgba(112,48,192,0.85);
+      border: 1px solid rgba(160,96,224,0.4);
+      color: var(--cream); font-size: 0.65rem;
+      font-weight: 600; letter-spacing: 0.06em;
+      padding: 3px 10px; border-radius: 100px;
+      white-space: nowrap;
+      backdrop-filter: blur(4px);
+    }
+
+    /* coordinates badge */
+    .map-coords {
+      padding: 10px 16px;
+      border-top: 1px solid rgba(160,96,224,0.12);
+      font-size: 0.62rem; letter-spacing: 0.12em;
+      color: rgba(160,96,224,0.6);
+      font-family: 'Special Elite', monospace;
+    }
+
+    .place-info { text-align:center; max-width:380px; }
+    .place-name {
+      font-family: 'Dancing Script', cursive;
+      font-size: clamp(1.6rem, 6vw, 2.4rem);
+      font-weight: 700; color: var(--cream);
+      margin-bottom: 8px;
+      text-shadow: 0 0 20px rgba(160,96,224,0.3);
+    }
+    .place-memory {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(0.95rem, 3vw, 1.1rem);
+      color: rgba(253,245,232,0.6); line-height: 1.75;
+    }
+
+    /* ══════════════════════════════════════
+       CHAPTER 3 — OUR WORDS
+    ══════════════════════════════════════ */
+    #ch-words {
+      background:
+        radial-gradient(ellipse 70% 50% at 50% 50%, rgba(184,40,72,0.05) 0%, transparent 70%);
+      min-height: 100dvh;
+    }
+    #ch-words .ch-tab { color:var(--rose3); border-color:rgba(255,128,152,0.25); background:rgba(184,40,72,0.08); }
+
+    .words-scene { width:100%; max-width:600px; }
+
+    .words-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(1rem, 3.5vw, 1.2rem);
+      color: rgba(253,245,232,0.45);
+      text-align: center; letter-spacing: 0.08em;
+      margin-bottom: clamp(28px, 6vw, 44px);
+    }
+
+    /* word explosion grid */
+    .words-cloud {
+      display: flex; flex-wrap: wrap;
+      gap: clamp(10px, 3vw, 16px);
+      justify-content: center; align-items: center;
+    }
+
+    .word-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: clamp(8px, 2vw, 12px) clamp(14px, 3vw, 20px);
+      border-radius: 100px;
+      font-family: 'Dancing Script', cursive;
+      font-size: clamp(1rem, 3.5vw, 1.35rem);
+      font-weight: 600; cursor: default;
+      opacity: 0; transform: scale(0.6) rotate(var(--rot,0deg));
+      transition: opacity 0.5s ease var(--delay,0s),
+                  transform 0.6s cubic-bezier(0.34,1.56,0.64,1) var(--delay,0s);
+      position: relative; overflow: hidden;
+    }
+    .chapter.revealed .word-chip {
+      opacity: 1; transform: scale(1) rotate(0deg);
+    }
+    .word-chip::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.08) 50%, transparent 60%);
+      animation: chipShimmer 4s linear infinite;
+      animation-delay: var(--delay,0s);
+    }
+    @keyframes chipShimmer {
+      from { transform:translateX(-200%); }
+      to   { transform:translateX(400%); }
+    }
+
+    /* colour variants */
+    .chip-rose    { background:rgba(184,40,72,0.2);  border:1px solid rgba(184,40,72,0.4);  color:var(--rose3); }
+    .chip-gold    { background:rgba(192,136,64,0.2); border:1px solid rgba(224,168,80,0.4); color:var(--gold3); }
+    .chip-violet  { background:rgba(112,48,192,0.2); border:1px solid rgba(160,96,224,0.4); color:var(--violet2); }
+    .chip-teal    { background:rgba(26,144,128,0.2); border:1px solid rgba(64,192,168,0.4); color:var(--teal2); }
+    .chip-cream   { background:rgba(253,245,232,0.08);border:1px solid rgba(253,245,232,0.18);color:var(--cream); }
+
+    .words-phrase {
+      margin-top: clamp(24px, 5vw, 36px);
+      text-align: center;
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(1.05rem, 3.5vw, 1.3rem);
+      color: rgba(253,245,232,0.55); line-height: 1.7;
+      max-width: 420px; margin-left: auto; margin-right: auto;
+    }
+
+    /* ══════════════════════════════════════
+       CHAPTER 4 — OUR FIRSTS
+    ══════════════════════════════════════ */
+    #ch-firsts {
+      background:
+        radial-gradient(ellipse 80% 50% at 50% 50%, rgba(192,136,64,0.05) 0%, transparent 70%);
+    }
+    #ch-firsts .ch-tab { color:var(--gold3); border-color:rgba(248,204,112,0.25); background:rgba(192,136,64,0.08); }
+
+    .firsts-scene { width:100%; max-width:600px; }
+
+    .polaroids-wrap {
+      display: flex; flex-wrap: wrap;
+      gap: clamp(12px, 3vw, 20px);
+      justify-content: center;
+    }
+
+    /* polaroid card */
+    .polaroid {
+      background: var(--paper);
+      padding: clamp(10px, 2.5vw, 14px) clamp(10px, 2.5vw, 14px) clamp(24px, 5vw, 36px);
+      border-radius: 2px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.4);
+      width: clamp(130px, 36vw, 175px);
+      opacity: 0;
+      transform: rotate(var(--rot,0deg)) translateY(20px);
+      transition: opacity 0.6s ease var(--delay,0s),
+                  transform 0.7s cubic-bezier(0.34,1.2,0.64,1) var(--delay,0s);
+      cursor: default;
+    }
+    .chapter.revealed .polaroid {
+      opacity: 1; transform: rotate(var(--rot,0deg)) translateY(0);
+    }
+    .polaroid:hover {
+      transform: rotate(0deg) translateY(-6px) scale(1.04) !important;
+      z-index: 5;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+      transition: transform 0.25s ease, box-shadow 0.25s ease !important;
+    }
+
+    .polaroid-img {
+      width: 100%; aspect-ratio: 1;
+      background: #1A1020;
+      border-radius: 1px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: clamp(1.6rem, 6vw, 2.4rem);
+      margin-bottom: clamp(6px, 1.5vw, 10px);
+      overflow: hidden; position: relative;
+    }
+    .polaroid-img::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 60%);
+    }
+
+    .polaroid-label {
+      font-family: 'Special Elite', monospace;
+      font-size: clamp(0.6rem, 1.8vw, 0.72rem);
+      color: var(--ink2);
+      text-align: center; line-height: 1.4;
+      letter-spacing: 0.02em;
+    }
+    .polaroid-date {
+      font-size: clamp(0.55rem, 1.6vw, 0.65rem);
+      color: rgba(58,32,16,0.5);
+      text-align: center; margin-top: 4px;
+      font-family: 'Special Elite', monospace;
+    }
+
+    /* ══════════════════════════════════════
+       CHAPTER 5 — OUR FUTURE
+    ══════════════════════════════════════ */
+    #ch-future {
+      background:
+        radial-gradient(ellipse 70% 50% at 50% 100%, rgba(26,144,128,0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 50% 0%, rgba(184,40,72,0.04) 0%, transparent 60%);
+      padding-bottom: clamp(60px, 12vw, 120px);
+    }
+    #ch-future .ch-tab { color:var(--teal2); border-color:rgba(64,192,168,0.25); background:rgba(26,144,128,0.08); }
+
+    .future-scene { width:100%; max-width:520px; }
+
+    .future-header { text-align:center; margin-bottom:clamp(24px,5vw,36px); }
+    .future-headline {
+      font-family: 'Dancing Script', cursive;
+      font-size: clamp(1.8rem, 7vw, 2.8rem);
+      font-weight: 700; color: var(--cream);
+      line-height: 1.1; margin-bottom: 8px;
+      text-shadow: 0 0 24px rgba(64,192,168,0.3);
+    }
+    .future-sub {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(0.9rem, 3vw, 1.05rem);
+      color: rgba(253,245,232,0.45);
+    }
+
+    /* bucket list */
+    .bucket-list {
+      display: flex; flex-direction: column; gap: clamp(8px, 2vw, 12px);
+    }
+
+    .bucket-item {
+      display: flex; align-items: flex-start; gap: 14px;
+      padding: clamp(14px, 3vw, 18px) clamp(16px, 3.5vw, 22px);
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+      opacity: 0; transform: translateX(-12px);
+      transition: opacity 0.5s ease var(--delay,0s),
+                  transform 0.5s ease var(--delay,0s);
+    }
+    .chapter.revealed .bucket-item {
+      opacity: 1; transform: translateX(0);
+      transition: opacity 0.5s ease var(--delay,0s),
+                  transform 0.5s ease var(--delay,0s),
+                  background 0.2s ease, border-color 0.2s ease;
+    }
+    .bucket-item:hover { background:rgba(64,192,168,0.06); border-color:rgba(64,192,168,0.2); }
+    .bucket-item.checked {
+      background: rgba(64,192,168,0.08);
+      border-color: rgba(64,192,168,0.3);
+    }
+    .bucket-item.checked:hover { background:rgba(64,192,168,0.12); }
+
+    .bucket-check {
+      flex-shrink: 0;
+      width: 22px; height: 22px; border-radius: 50%;
+      border: 2px solid rgba(64,192,168,0.4);
+      display: flex; align-items: center; justify-content: center;
+      margin-top: 1px;
+      transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      font-size: 0.7rem; color: transparent;
+    }
+    .bucket-item.checked .bucket-check {
+      background: var(--teal);
+      border-color: var(--teal);
+      color: white; font-size: 0.75rem;
+      box-shadow: 0 0 12px rgba(26,144,128,0.5);
+    }
+
+    .bucket-text {
+      flex: 1;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1rem, 3.2vw, 1.15rem);
+      color: rgba(253,245,232,0.75);
+      line-height: 1.55;
+      transition: color 0.25s ease;
+    }
+    .bucket-item.checked .bucket-text {
+      color: var(--teal2);
+      text-decoration: line-through;
+      text-decoration-color: rgba(64,192,168,0.4);
+    }
+
+    .bucket-emoji { font-size: 1.1rem; flex-shrink:0; }
+
+    .bucket-progress {
+      margin-top: 20px; text-align: center;
+      font-size: 0.72rem; color: rgba(144,112,128,0.5);
+      letter-spacing: 0.08em;
+    }
+    .bucket-progress strong { color: var(--teal2); font-size: 0.9rem; }
+
+    /* ══════════════════════════════════════
+       ENDING — sealed with love
+    ══════════════════════════════════════ */
+    #section-end {
+      position: relative; z-index: 10;
+      min-height: 80dvh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 60px 24px 80px; text-align: center;
+    }
+    #section-end::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 70% 50% at 50% 50%,
+        rgba(184,40,72,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .end-seal {
+      font-size: clamp(2rem, 7vw, 3rem);
+      margin-bottom: 24px;
+      animation: sealBreath 3s ease-in-out infinite;
+      display: block;
+      opacity: 0; transition: opacity 1s ease;
+    }
+    @keyframes sealBreath {
+      0%,100%{ transform:scale(1); filter:drop-shadow(0 0 12px rgba(184,40,72,0.4)); }
+      50%    { transform:scale(1.08); filter:drop-shadow(0 0 24px rgba(184,40,72,0.7)); }
+    }
+    .end-seal.reveal { opacity: 1; }
+
+    .end-headline {
+      font-family: 'Dancing Script', cursive;
+      font-size: clamp(2rem, 8vw, 3.4rem);
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--rose2), var(--gold2), var(--rose3));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.1; margin-bottom: 12px;
+      filter: drop-shadow(0 0 24px rgba(184,40,72,0.25));
+      opacity: 0; transform: translateY(12px);
+      transition: opacity 1s ease 0.2s, transform 1s ease 0.2s;
+    }
+    .end-headline.reveal { opacity: 1; transform: translateY(0); }
+
+    .end-from {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(0.9rem, 3vw, 1.1rem);
+      color: rgba(253,245,232,0.45);
+      margin-bottom: 48px; letter-spacing: 0.06em;
+      opacity: 0; transition: opacity 0.9s ease 0.5s;
+    }
+    .end-from.reveal { opacity: 1; }
+
+    .end-actions {
+      opacity: 0; transform: translateY(10px);
+      transition: opacity 0.9s ease 0.7s, transform 0.9s ease 0.7s;
+    }
+    .end-actions.reveal { opacity: 1; transform: translateY(0); }
+
+    .share-row { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-bottom:16px; }
+    .share-btn {
+      display:inline-flex; align-items:center; gap:7px;
+      font-family:'DM Sans',sans-serif; font-size:0.82rem;
+      font-weight:500; padding:11px 20px; border-radius:100px;
+      border:none; cursor:pointer; text-decoration:none;
+      white-space:nowrap;
+      transition:transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .share-btn:hover { transform:translateY(-2px); }
+    .btn-wa  { background:#25D366; color:#fff; box-shadow:0 4px 14px rgba(37,211,102,0.28); }
+    .btn-ms  { background:#0078FF; color:#fff; box-shadow:0 4px 14px rgba(0,120,255,0.28); }
+    .btn-cp  { background:rgba(253,245,232,0.07); color:var(--cream); border:1px solid rgba(253,245,232,0.14); }
+
+    .end-expiry {
+      font-size:0.7rem; color:rgba(144,112,128,0.45);
+      display:flex; align-items:center; justify-content:center;
+      gap:6px; margin-bottom:10px;
+    }
+    .exp-dot {
+      width:4px; height:4px; border-radius:50%;
+      background:var(--rose);
+      animation:expPulse 2.4s ease-in-out infinite; flex-shrink:0;
+    }
+    @keyframes expPulse {
+      0%,100%{ opacity:0.6; transform:scale(1); }
+      50%    { opacity:1;   transform:scale(1.4); }
+    }
+    .end-brand { font-size:0.68rem; color:rgba(144,112,128,0.3); }
+    .end-brand a { color:rgba(184,40,72,0.42); text-decoration:none; }
+    .end-brand a:hover { color:var(--rose); }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration:0.01ms !important; transition-duration:0.01ms !important; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="star-canvas"></canvas>
+<div class="amb" id="amb1"></div>
+<div class="amb" id="amb2"></div>
+<div class="amb" id="amb3"></div>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="load-icon">🔐</div>
+  <div class="load-text">Unlocking your little world...</div>
+  <div class="load-dots">
+    <div class="load-dot"></div>
+    <div class="load-dot"></div>
+    <div class="load-dot"></div>
+  </div>
+</div>
+
+<!-- ERROR -->
+<div id="error">
+  <div class="err-icon">🔐</div>
+  <div class="err-head">This world has been sealed</div>
+  <p class="err-body">Every private world is made for a single moment.<br/>This one has expired — but what you have is real.</p>
+</div>
+
+<!-- DOOR SCENE -->
+<div id="scene-door">
+  <div class="door-eyebrow">you have been given a key to</div>
+  <div class="door-title" id="door-title">Our Little World</div>
+  <div class="door-names" id="door-names">—</div>
+
+  <div class="door-wrap" id="door-wrap" onclick="openDoor()">
+    <svg class="door-svg" viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="dG" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%"   stop-color="#1A0C08"/>
+          <stop offset="100%" stop-color="#0E0608"/>
+        </linearGradient>
+        <linearGradient id="frameG" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%"   stop-color="#2A1810"/>
+          <stop offset="100%" stop-color="#1A0C08"/>
+        </linearGradient>
+      </defs>
+      <!-- door frame -->
+      <rect x="10" y="10" width="180" height="260" rx="4" fill="url(#frameG)"/>
+      <rect x="14" y="14" width="172" height="252" rx="2" fill="none" stroke="rgba(192,136,64,0.2)" stroke-width="1"/>
+      <!-- door panel -->
+      <g class="door-panel" id="door-panel">
+        <rect x="18" y="18" width="164" height="244" rx="2" fill="url(#dG)"/>
+        <!-- panel insets -->
+        <rect x="30" y="28" width="140" height="100" rx="2" fill="none" stroke="rgba(192,136,64,0.18)" stroke-width="1"/>
+        <rect x="30" y="140" width="140" height="100" rx="2" fill="none" stroke="rgba(192,136,64,0.18)" stroke-width="1"/>
+        <!-- keyhole -->
+        <circle cx="162" cy="140" r="8" fill="rgba(192,136,64,0.15)" stroke="rgba(192,136,64,0.5)" stroke-width="1.5"/>
+        <path d="M162 137 L162 148 M159 148 L165 148" stroke="rgba(192,136,64,0.6)" stroke-width="1.5" stroke-linecap="round"/>
+        <!-- door panel text -->
+        <text x="100" y="80" text-anchor="middle" font-family="Dancing Script, cursive" font-size="14" fill="rgba(192,136,64,0.4)" font-style="italic">Our</text>
+        <text x="100" y="100" text-anchor="middle" font-family="Dancing Script, cursive" font-size="14" fill="rgba(192,136,64,0.4)" font-style="italic">Little World</text>
+        <!-- decorative lines -->
+        <line x1="60" y1="88" x2="140" y2="88" stroke="rgba(192,136,64,0.15)" stroke-width="0.5"/>
+        <line x1="60" y1="92" x2="140" y2="92" stroke="rgba(192,136,64,0.1)" stroke-width="0.5"/>
+        <!-- heart -->
+        <path d="M100 195 C90 185 80 180 80 170 C80 163 86 158 93 158 C96 158 98 161 100 164 C102 161 104 158 107 158 C114 158 120 163 120 170 C120 180 110 185 100 195Z" fill="rgba(184,40,72,0.2)" stroke="rgba(184,40,72,0.4)" stroke-width="1"/>
+      </g>
+      <!-- hinges -->
+      <rect x="10" y="40" width="12" height="20" rx="2" fill="rgba(192,136,64,0.3)"/>
+      <rect x="10" y="200" width="12" height="20" rx="2" fill="rgba(192,136,64,0.3)"/>
+      <!-- light crack when door opens -->
+      <rect x="18" y="18" width="2" height="244" id="door-light" fill="rgba(248,204,112,0)" rx="1"/>
+    </svg>
+  </div>
+
+  <div class="door-hint">
+    <div class="hint-line"></div>
+    tap the door to enter
+    <div class="hint-line"></div>
+  </div>
+</div>
+
+<!-- MAIN BODY — revealed after door opens -->
+<div id="main-body">
+
+  <!-- CHAPTER 1: OUR SONG -->
+  <section class="chapter" id="ch-song">
+    <div class="ch-tab">🎵 Our Song</div>
+    <div class="ch-content">
+      <div class="song-scene">
+        <div class="vinyl-wrap">
+          <div class="vinyl" id="vinyl">
+            <div class="vinyl-centre"><div class="vinyl-dot"></div></div>
+          </div>
+          <div class="tonearm" id="tonearm">
+            <div class="tonearm-body">
+              <div class="tonearm-head"></div>
+            </div>
+          </div>
+        </div>
+        <div class="song-info">
+          <div class="song-label">the song that is ours</div>
+          <div class="song-title" id="song-title">—</div>
+          <div class="song-artist" id="song-artist">—</div>
+          <div class="song-memory" id="song-memory">—</div>
+          <button class="play-btn" id="play-btn" onclick="toggleVinyl()">
+            ▶ Play on Spotify
+          </button>
+          <div class="spotify-embed" id="spotify-embed"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="ch-divider"><div class="ch-div-line"></div><div class="ch-div-dot">✦</div><div class="ch-div-line"></div></div>
+
+  <!-- CHAPTER 2: OUR PLACE -->
+  <section class="chapter" id="ch-place">
+    <div class="ch-tab">📍 Our Place</div>
+    <div class="ch-content">
+      <div class="place-scene">
+        <div class="map-card">
+          <div class="map-inner" id="map-inner">
+            <!-- SVG world map -->
+            <svg class="map-svg" viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg">
+              <path fill="rgba(160,96,224,0.35)" d="M132,46 L159,38 L173,46 L196,38 L214,52 L228,46 L252,58 L245,72 L228,80 L214,92 L196,86 L180,98 L166,92 L152,104 L138,98 L125,110 L111,104 L104,118 L118,130 L132,138 L145,132 L159,144 L166,158 L180,164 L194,158 L208,170 L214,184 L200,190 L186,196 L172,202 L158,196 L145,202 L131,208 L118,202 L104,196 L97,182 L111,176 L118,162 L104,156 L97,170 L83,176 L76,162 L90,156 L97,142 L83,136 L76,122 L90,116 L97,102 L111,96 L118,82 L104,76 L97,62 L111,56 L125,50 L132,46Z"/>
+              <path fill="rgba(160,96,224,0.3)" d="M270,80 L296,72 L322,64 L348,58 L374,64 L396,76 L414,90 L428,106 L440,122 L448,140 L440,158 L428,172 L416,184 L400,192 L384,196 L368,200 L352,196 L336,188 L320,180 L308,168 L296,156 L284,144 L276,130 L272,116 L268,102 L266,88 L270,80Z"/>
+              <path fill="rgba(160,96,224,0.28)" d="M460,100 L478,88 L498,82 L518,88 L536,100 L548,116 L552,132 L548,148 L536,160 L518,168 L498,170 L478,166 L462,154 L452,138 L452,122 L456,108 L460,100Z"/>
+              <path fill="rgba(160,96,224,0.32)" d="M560,80 L584,68 L612,62 L638,68 L660,82 L672,100 L676,120 L672,140 L658,156 L640,166 L620,170 L600,166 L582,154 L570,138 L562,120 L558,100 L560,80Z"/>
+              <path fill="rgba(160,96,224,0.2)" d="M310,220 L340,210 L364,222 L378,240 L374,260 L358,274 L338,280 L318,278 L304,264 L298,244 L306,228 L310,220Z"/>
+              <path fill="rgba(160,96,224,0.22)" d="M520,200 L548,192 L572,200 L588,218 L584,238 L568,250 L546,254 L524,248 L510,232 L510,212 L520,200Z"/>
+            </svg>
+            <!-- pin positioned via JS -->
+            <div class="map-pin" id="map-pin" style="left:50%;top:50%;">
+              <div class="pin-label" id="pin-label">Our Place</div>
+              <div class="pin-icon">📍</div>
+              <div class="pin-pulse"></div>
+            </div>
+          </div>
+          <div class="map-coords" id="map-coords">— · —</div>
+        </div>
+        <div class="place-info">
+          <div class="place-name" id="place-name">—</div>
+          <div class="place-memory" id="place-memory">—</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="ch-divider"><div class="ch-div-line"></div><div class="ch-div-dot">✦</div><div class="ch-div-line"></div></div>
+
+  <!-- CHAPTER 3: OUR WORDS -->
+  <section class="chapter" id="ch-words">
+    <div class="ch-tab">💬 Our Words</div>
+    <div class="ch-content">
+      <div class="words-scene">
+        <div class="words-title">the language that belongs only to us</div>
+        <div class="words-cloud" id="words-cloud"></div>
+        <div class="words-phrase" id="words-phrase">—</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="ch-divider"><div class="ch-div-line"></div><div class="ch-div-dot">✦</div><div class="ch-div-line"></div></div>
+
+  <!-- CHAPTER 4: OUR FIRSTS -->
+  <section class="chapter" id="ch-firsts">
+    <div class="ch-tab">📸 Our Firsts</div>
+    <div class="ch-content">
+      <div class="firsts-scene">
+        <div class="polaroids-wrap" id="polaroids-wrap"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="ch-divider"><div class="ch-div-line"></div><div class="ch-div-dot">✦</div><div class="ch-div-line"></div></div>
+
+  <!-- CHAPTER 5: OUR FUTURE -->
+  <section class="chapter" id="ch-future">
+    <div class="ch-tab">🌟 Our Future</div>
+    <div class="ch-content">
+      <div class="future-scene">
+        <div class="future-header">
+          <div class="future-headline">Things We Will Do</div>
+          <div class="future-sub">tap each one when you do it together</div>
+        </div>
+        <div class="bucket-list" id="bucket-list"></div>
+        <div class="bucket-progress" id="bucket-progress"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ENDING -->
+  <section id="section-end">
+    <span class="end-seal" id="end-seal">🔐</span>
+    <div class="end-headline" id="end-headline">Sealed with love.</div>
+    <div class="end-from" id="end-from">—</div>
+    <div class="end-actions" id="end-actions">
+      <div class="share-row">
+        <a class="share-btn btn-wa" id="btn-wa" href="#" target="_blank">📱 Share via WhatsApp</a>
+        <a class="share-btn btn-ms" id="btn-ms" href="#" target="_blank">💬 Messenger</a>
+        <button class="share-btn btn-cp" id="btn-cp" onclick="copyLink()">📋 Copy link</button>
+      </div>
+      <div class="end-expiry">
+        <div class="exp-dot"></div>
+        <span id="expiry-text">This world expires in 24 hours</span>
+      </div>
+      <div class="end-brand">Created with <a href="https://loversgift.io">LoversGift</a></div>
+    </div>
+  </section>
+
+</div><!-- /main-body -->
+
+<script>
+  // ─── CONFIG ──────────────────────────────────────────────────
+  const API_BASE = 'https://your-app.railway.app'; // ← YOUR RAILWAY URL
+
+  // ─── STATE ───────────────────────────────────────────────────
+  let giftData   = null;
+  let worldData  = {};  // parsed from extra_data
+  let vinylOn    = false;
+  let bucketKey  = '';  // localStorage key for checklist state
+
+  // ─── STARFIELD ───────────────────────────────────────────────
+  (function() {
+    const canvas = document.getElementById('star-canvas');
+    const ctx    = canvas.getContext('2d');
+    let W, H, stars = [];
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = document.documentElement.scrollHeight || window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+    for (let i = 0; i < 220; i++) {
+      stars.push({
+        x: Math.random(), y: Math.random(),
+        r: 0.3 + Math.random() * 1.4,
+        base: 0.08 + Math.random() * 0.5,
+        spd: 0.001 + Math.random() * 0.003,
+        ph: Math.random() * Math.PI * 2,
+        gold: Math.random() > 0.8,
+        violet: Math.random() > 0.88,
+      });
+    }
+    function draw() {
+      const H2 = document.documentElement.scrollHeight || window.innerHeight;
+      if (canvas.height !== H2) { canvas.height = H2; H = H2; }
+      ctx.clearRect(0, 0, W, H);
+      const t = Date.now() * 0.001;
+      for (const s of stars) {
+        const a = s.base * (0.5 + 0.5 * Math.sin(t * s.spd * 40 + s.ph));
+        ctx.beginPath();
+        ctx.arc(s.x * W, s.y * H, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = s.violet ? `rgba(160,96,224,${a.toFixed(2)})` :
+                        s.gold   ? `rgba(240,192,96,${a.toFixed(2)})` :
+                                   `rgba(253,245,232,${a.toFixed(2)})`;
+        ctx.fill();
+      }
+      requestAnimationFrame(draw);
+    }
+    draw();
+  })();
+
+  // ─── DOOR OPEN ───────────────────────────────────────────────
+  function openDoor() {
+    const wrap  = document.getElementById('door-wrap');
+    const panel = document.getElementById('door-panel');
+    const light = document.getElementById('door-light');
+    wrap.classList.add('opening');
+    light.setAttribute('fill', 'rgba(248,204,112,0.6)');
+
+    setTimeout(() => {
+      const doorScene = document.getElementById('scene-door');
+      doorScene.classList.add('out');
+      setTimeout(() => {
+        doorScene.style.display = 'none';
+        const body = document.getElementById('main-body');
+        body.classList.add('show');
+        window.scrollTo(0, 0);
+        setupScrollReveal();
+        setupDividerReveal();
+      }, 700);
+    }, 900);
+  }
+
+  // ─── SCROLL REVEAL ───────────────────────────────────────────
+  function setupScrollReveal() {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('revealed');
+          io.unobserve(e.target);
+          // trigger chapter-specific animations
+          const id = e.target.id;
+          if (id === 'ch-song')   onSongReveal();
+        }
+      });
+    }, { threshold: 0.15 });
+    document.querySelectorAll('.chapter').forEach(el => io.observe(el));
+
+    // ending section
+    const endIo = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          ['end-seal','end-headline','end-from','end-actions'].forEach(id => {
+            document.getElementById(id)?.classList.add('reveal');
+          });
+          endIo.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.2 });
+    document.getElementById('section-end') && endIo.observe(document.getElementById('section-end'));
+  }
+
+  function setupDividerReveal() {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('show'); io.unobserve(e.target); }
+      });
+    }, { threshold: 0.5 });
+    document.querySelectorAll('.ch-divider').forEach(el => io.observe(el));
+  }
+
+  // ─── VINYL TOGGLE ────────────────────────────────────────────
+  function onSongReveal() {
+    // tonearm drifts in after reveal
+    setTimeout(() => {
+      document.getElementById('tonearm').classList.add('playing');
+      document.getElementById('vinyl').classList.add('spinning');
+      vinylOn = true;
+      const btn = document.getElementById('play-btn');
+      if (btn) { btn.textContent = '⏸ Playing'; btn.classList.add('playing-state'); }
+    }, 800);
+  }
+
+  function toggleVinyl() {
+    vinylOn = !vinylOn;
+    const vinyl   = document.getElementById('vinyl');
+    const tonearm = document.getElementById('tonearm');
+    const btn     = document.getElementById('play-btn');
+    const embed   = document.getElementById('spotify-embed');
+
+    vinyl.classList.toggle('spinning', vinylOn);
+    tonearm.classList.toggle('playing', vinylOn);
+
+    if (vinylOn) {
+      btn.textContent = '⏸ Playing';
+      btn.classList.add('playing-state');
+    } else {
+      btn.textContent = '▶ Play on Spotify';
+      btn.classList.remove('playing-state');
+    }
+
+    // Show Spotify embed if URL provided
+    if (worldData.song?.spotify && vinylOn) {
+      const url = worldData.song.spotify;
+      const match = url.match(/track\/([a-zA-Z0-9]+)/);
+      if (match) {
+        embed.innerHTML = `<iframe src="https://open.spotify.com/embed/track/${match[1]}?utm_source=generator&theme=0" height="80" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
+        embed.classList.add('show');
+      }
+    }
+  }
+
+  // ─── BUILD CHAPTERS ──────────────────────────────────────────
+
+  function buildSong(song) {
+    document.getElementById('song-title').textContent  = song.title  || 'Our Song';
+    document.getElementById('song-artist').textContent = song.artist ? `by ${song.artist}` : '';
+    document.getElementById('song-memory').textContent = song.memory || '';
+    if (!song.spotify) {
+      document.getElementById('play-btn').style.display = 'none';
+    }
+  }
+
+  function buildPlace(place) {
+    document.getElementById('place-name').textContent   = place.name   || 'Our Place';
+    document.getElementById('place-memory').textContent = place.memory || '';
+    document.getElementById('pin-label').textContent    = place.name   || 'Our Place';
+    if (place.coords) document.getElementById('map-coords').textContent = place.coords;
+
+    // Position pin on the SVG map (rough lat/lng → percentage mapping)
+    if (place.lat && place.lng) {
+      const x = ((parseFloat(place.lng) + 180) / 360 * 100).toFixed(1);
+      const y = ((90 - parseFloat(place.lat)) / 180 * 100).toFixed(1);
+      const pin = document.getElementById('map-pin');
+      pin.style.left = `${x}%`;
+      pin.style.top  = `${y}%`;
+    }
+  }
+
+  const CHIP_COLORS = ['chip-rose','chip-gold','chip-violet','chip-teal','chip-cream'];
+  function buildWords(words) {
+    const cloud = document.getElementById('words-cloud');
+    cloud.innerHTML = '';
+    const items = Array.isArray(words.list) ? words.list : [];
+    if (!items.length) {
+      cloud.parentElement.style.display = 'none'; return;
+    }
+    items.forEach((word, i) => {
+      const chip = document.createElement('div');
+      const color = CHIP_COLORS[i % CHIP_COLORS.length];
+      const rot   = ((Math.random() - 0.5) * 8).toFixed(1);
+      const delay = (i * 0.08).toFixed(2);
+      chip.className = `word-chip ${color}`;
+      chip.style.setProperty('--rot', `${rot}deg`);
+      chip.style.setProperty('--delay', `${delay}s`);
+      chip.textContent = word;
+      cloud.appendChild(chip);
+    });
+    if (words.phrase) {
+      document.getElementById('words-phrase').textContent = `"${words.phrase}"`;
+    }
+  }
+
+  const FIRST_EMOJIS = { date:'💑', kiss:'💋', trip:'✈️', fight:'🌧️', 'i love you':'💌', gift:'🎁', photo:'📸', dance:'💃' };
+  function buildFirsts(firsts) {
+    const wrap = document.getElementById('polaroids-wrap');
+    wrap.innerHTML = '';
+    const items = Array.isArray(firsts) ? firsts : [];
+    if (!items.length) { wrap.parentElement.style.display='none'; return; }
+    const rots  = [-3.5, 2.8, -2, 4, -1.5, 3.2, -4, 1.8];
+    items.slice(0, 8).forEach((first, i) => {
+      const p   = document.createElement('div');
+      const rot = rots[i % rots.length];
+      const del = (i * 0.1).toFixed(2);
+      p.className = 'polaroid';
+      p.style.setProperty('--rot', `${rot}deg`);
+      p.style.setProperty('--delay', `${del}s`);
+      const emoji = FIRST_EMOJIS[first.type?.toLowerCase()] || '📸';
+      p.innerHTML = `
+        <div class="polaroid-img">${emoji}</div>
+        <div class="polaroid-label">${first.title || first.type || 'A First'}</div>
+        ${first.date ? `<div class="polaroid-date">${first.date}</div>` : ''}
+      `;
+      wrap.appendChild(p);
+    });
+  }
+
+  const BUCKET_EMOJIS = ['✈️','🏔️','🌊','🌅','🍽️','🎭','📚','🏕️','🎉','💃','🌍','🎨','🌙','🎪','🌺'];
+  function buildBucketList(list) {
+    const wrap = document.getElementById('bucket-list');
+    wrap.innerHTML = '';
+    if (!list?.length) { wrap.parentElement.style.display='none'; return; }
+
+    // Load saved state from sessionStorage (won't persist across device but works for session)
+    const saved = JSON.parse(sessionStorage.getItem(bucketKey) || '[]');
+
+    list.forEach((item, i) => {
+      const el    = document.createElement('div');
+      const emoji = BUCKET_EMOJIS[i % BUCKET_EMOJIS.length];
+      const isChecked = saved.includes(i);
+      el.className = `bucket-item${isChecked ? ' checked' : ''}`;
+      el.style.setProperty('--delay', `${(i * 0.07).toFixed(2)}s`);
+      el.innerHTML = `
+        <div class="bucket-check">${isChecked ? '✓' : ''}</div>
+        <div class="bucket-text">${item}</div>
+        <div class="bucket-emoji">${emoji}</div>
+      `;
+      el.addEventListener('click', () => toggleBucket(i, el, list.length));
+      wrap.appendChild(el);
+    });
+    updateBucketProgress(saved.length, list.length);
+  }
+
+  function toggleBucket(idx, el, total) {
+    const isChecked = el.classList.toggle('checked');
+    el.querySelector('.bucket-check').textContent = isChecked ? '✓' : '';
+
+    // save state
+    const saved = JSON.parse(sessionStorage.getItem(bucketKey) || '[]');
+    const newSaved = isChecked
+      ? [...new Set([...saved, idx])]
+      : saved.filter(i => i !== idx);
+    sessionStorage.setItem(bucketKey, JSON.stringify(newSaved));
+    updateBucketProgress(newSaved.length, total);
+  }
+
+  function updateBucketProgress(done, total) {
+    const el = document.getElementById('bucket-progress');
+    if (!el) return;
+    if (done === 0) {
+      el.innerHTML = `<strong>0</strong> of ${total} adventures completed · start ticking them off ✦`;
+    } else if (done === total) {
+      el.innerHTML = `<strong>All ${total}</strong> completed 🎉 Your story is extraordinary.`;
+    } else {
+      el.innerHTML = `<strong>${done}</strong> of ${total} adventures completed · keep going ✦`;
+    }
+  }
+
+  // ─── PARSE extra_data ─────────────────────────────────────────
+  // Sender fills in their data in the customisation form.
+  // Structure stored in extra_data JSON:
+  // {
+  //   song:   { title, artist, spotify, memory },
+  //   place:  { name, lat, lng, coords, memory },
+  //   words:  { list:["nickname1","phrase1",...], phrase:"what you always say" },
+  //   firsts: [ { type:"date", title:"First Date", date:"June 14, 2021" }, ... ],
+  //   future: [ "See the Northern Lights", "Get a dog together", ... ]
+  // }
+  function parseWorldData(gift) {
+    const ed = gift.extraData || {};
+    // Fall back to message parsing if no extraData
+    if (!ed.song && !ed.place && !ed.words) {
+      return parseFromMessage(gift.message || '');
+    }
+    return ed;
+  }
+
+  function parseFromMessage(message) {
+    // Simple text format fallback:
+    // SONG: Song Title - Artist | memory text
+    // PLACE: Place Name | memory text | lat,lng
+    // WORDS: word1, word2, word3 | "our phrase"
+    // FIRSTS: First Date|June 2021, First Kiss|July 2021
+    // FUTURE: Item 1, Item 2, Item 3
+    const lines = message.split('\n').map(l => l.trim());
+    const data  = { song:{}, place:{}, words:{list:[]}, firsts:[], future:[] };
+
+    for (const line of lines) {
+      if (line.startsWith('SONG:')) {
+        const parts = line.slice(5).split('|');
+        const songParts = (parts[0] || '').split(' - ');
+        data.song = { title: songParts[0]?.trim(), artist: songParts[1]?.trim(), memory: parts[1]?.trim() };
+      } else if (line.startsWith('PLACE:')) {
+        const parts = line.slice(6).split('|');
+        const coords = parts[2]?.trim().split(',');
+        data.place = { name: parts[0]?.trim(), memory: parts[1]?.trim(),
+          lat: coords?.[0], lng: coords?.[1], coords: parts[2]?.trim() };
+      } else if (line.startsWith('WORDS:')) {
+        const parts = line.slice(6).split('|');
+        data.words = { list: parts[0].split(',').map(w=>w.trim()).filter(Boolean), phrase: parts[1]?.trim().replace(/^"|"$/g,'') };
+      } else if (line.startsWith('FIRSTS:')) {
+        data.firsts = line.slice(7).split(',').map(item => {
+          const p = item.split('|'); return { title: p[0]?.trim(), date: p[1]?.trim() };
+        }).filter(f => f.title);
+      } else if (line.startsWith('FUTURE:')) {
+        data.future = line.slice(7).split(',').map(s => s.trim()).filter(Boolean);
+      }
+    }
+    return data;
+  }
+
+  // ─── POPULATE ALL ────────────────────────────────────────────
+  function populate(gift) {
+    worldData = parseWorldData(gift);
+    bucketKey = `lg-bucket-${gift.code || 'demo'}`;
+
+    // Door
+    document.getElementById('door-title').textContent = 'Our Little World';
+    if (gift.senderName && gift.receiverName) {
+      document.getElementById('door-names').textContent =
+        `${gift.senderName} & ${gift.receiverName}`;
+    } else if (gift.receiverName) {
+      document.getElementById('door-names').textContent = `made for ${gift.receiverName}`;
+    }
+
+    // Chapters
+    if (worldData.song)   buildSong(worldData.song);
+    if (worldData.place)  buildPlace(worldData.place);
+    if (worldData.words)  buildWords(worldData.words);
+    if (worldData.firsts) buildFirsts(worldData.firsts);
+    if (worldData.future) buildBucketList(worldData.future);
+
+    // Ending
+    document.getElementById('end-headline').textContent =
+      'This world was made for you.';
+    document.getElementById('end-from').textContent =
+      gift.senderName ? `sealed with all my love, ${gift.senderName}` : '— sealed with love';
+
+    // Share
+    const url   = gift.shareUrl || window.location.href;
+    const waMsg = encodeURIComponent(`🔐 Someone built an entire world for me → ${url}`);
+    document.getElementById('btn-wa').href = `https://wa.me/?text=${waMsg}`;
+    document.getElementById('btn-ms').href = `fb-messenger://share/?link=${encodeURIComponent(url)}`;
+    setExpiryText(gift.expiresAt);
+  }
+
+  // ─── EXPIRY ──────────────────────────────────────────────────
+  function setExpiryText(expiresAt) {
+    const el = document.getElementById('expiry-text');
+    if (!expiresAt || !el) return;
+    function update() {
+      const ms = new Date(expiresAt) - Date.now();
+      if (ms <= 0) { el.textContent = 'This world has expired'; return; }
+      const h = Math.floor(ms / 3600000);
+      const m = Math.floor((ms % 3600000) / 60000);
+      el.textContent = h > 0 ? `This world expires in ${h}h ${m}m` : `Expires in ${m}m`;
+    }
+    update(); setInterval(update, 60000);
+  }
+
+  function copyLink() {
+    const link = giftData?.shareUrl || window.location.href;
+    navigator.clipboard.writeText(link).then(() => {
+      const btn = document.getElementById('btn-cp');
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copied!';
+      btn.style.background = 'rgba(76,175,80,0.15)';
+      btn.style.color = '#81c784';
+      setTimeout(() => { btn.textContent = orig; btn.style.background=''; btn.style.color=''; }, 2500);
+    });
+  }
+
+  // ─── DEMO DATA ────────────────────────────────────────────────
+  const DEMO_GIFT = {
+    receiverName: 'Sofia',
+    senderName:   'Marco',
+    code:         'demo',
+    message:      '',
+    extraData: {
+      song: {
+        title:   'Perfect',
+        artist:  'Ed Sheeran',
+        spotify: 'https://open.spotify.com/track/0tgVpDi06FyKpA1z0VMD4v',
+        memory:  'It was playing when we slow-danced in your kitchen at 2am. I never wanted it to end.',
+      },
+      place: {
+        name:   'The café on Rue de Rivoli',
+        memory: 'We sat there for four hours. You ordered the wrong thing and loved it. That was the afternoon I knew.',
+        lat:    '48.8606',
+        lng:    '2.3376',
+        coords: '48°51\'N, 2°20\'E · Paris, France',
+      },
+      words: {
+        list: ['Bambina','My person','The look','Tuesday chaos','Borrowed sweater','3am voice','Our corner','You know'],
+        phrase: 'You know... that thing you do.',
+      },
+      firsts: [
+        { type: 'date',      title: 'First Date',         date: 'June 14, 2021'   },
+        { type: 'kiss',      title: 'First Kiss',         date: 'June 21, 2021'   },
+        { type: 'trip',      title: 'First Trip Together',date: 'October 2021'    },
+        { type: 'fight',     title: 'First Fight',        date: 'December 2021'   },
+        { type: 'i love you',title: 'First "I Love You"', date: 'February 2022'   },
+        { type: 'gift',      title: 'First Gift',         date: 'March 2022'      },
+      ],
+      future: [
+        'See the Northern Lights together',
+        'Get a dog and name him something ridiculous',
+        'Cook a proper three-course dinner from scratch',
+        'Take a train across a country we have never been to',
+        'Learn one dance properly',
+        'Spend a whole weekend without our phones',
+        'Watch the sunrise from somewhere beautiful',
+        'Write something — anything — together',
+      ],
+    },
+    theme:     'rose',
+    expiresAt: new Date(Date.now() + 23 * 3600 * 1000).toISOString(),
+    shareUrl:  window.location.href,
+  };
+
+  // ─── LOAD ────────────────────────────────────────────────────
+  async function loadGift() {
+    let code = '';
+    const parts = window.location.pathname.split('/');
+    const gIdx  = parts.indexOf('g');
+    if (gIdx !== -1 && parts[gIdx + 1]) code = parts[gIdx + 1];
+    else code = new URLSearchParams(window.location.search).get('code') || '';
+
+    const useDemo = window.location.search.includes('demo');
+
+    if (!code && !useDemo) {
+      document.getElementById('loading').classList.add('gone');
+      document.getElementById('error').classList.add('show');
+      return;
+    }
+
+    try {
+      if (!useDemo) {
+        const resp = await fetch(`${API_BASE}/api/gifts/${code}/view`);
+        const data = await resp.json();
+        if (!resp.ok || data.expired || data.error) {
+          document.getElementById('loading').classList.add('gone');
+          document.getElementById('error').classList.add('show');
+          return;
+        }
+        giftData = data.gift;
+      } else {
+        giftData = DEMO_GIFT;
+      }
+
+      populate(giftData);
+
+      const loadEl = document.getElementById('loading');
+      loadEl.classList.add('out');
+      setTimeout(() => {
+        loadEl.classList.add('gone');
+        document.getElementById('scene-door').classList.add('show');
+      }, 1400);
+
+    } catch {
+      if (useDemo) {
+        giftData = DEMO_GIFT;
+        populate(giftData);
+        const loadEl = document.getElementById('loading');
+        loadEl.classList.add('out');
+        setTimeout(() => {
+          loadEl.classList.add('gone');
+          document.getElementById('scene-door').classList.add('show');
+        }, 1400);
+      } else {
+        document.getElementById('loading').classList.add('gone');
+        document.getElementById('error').classList.add('show');
+      }
+    }
+  }
+
+  loadGift();
+</script>
+</body>
+</html>

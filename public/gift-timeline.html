@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Our Story 💫</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500;1,600&family=DM+Sans:wght@300;400;500;600&family=Dancing+Script:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --night:    #050308;
+      --deep:     #0A0514;
+      --velvet:   #110820;
+      --rose:     #C0284A;
+      --rose2:    #E04868;
+      --rose-dim: #701830;
+      --gold:     #C8904A;
+      --gold2:    #E8B870;
+      --gold3:    #F5D490;
+      --cream:    #FDF5E8;
+      --cream2:   #EDE0CC;
+      --mauve:    #8A5870;
+      --mauve2:   #6A3A50;
+      --thread:   rgba(200,144,74,0.35);
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--night);
+      color: var(--cream);
+      font-family: 'DM Sans', sans-serif;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ════════════════════════════════════════
+       CANVAS STARFIELD (fixed behind everything)
+    ════════════════════════════════════════ */
+    #star-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ════════════════════════════════════════
+       LOADING
+    ════════════════════════════════════════ */
+    #loading {
+      position: fixed; inset: 0; z-index: 500;
+      background: var(--night);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      transition: opacity 1s ease;
+    }
+    #loading.out  { opacity: 0; pointer-events: none; }
+    #loading.gone { display: none; }
+
+    .load-stars {
+      font-size: 2rem; letter-spacing: 0.5em;
+      margin-bottom: 20px;
+      animation: loadPulse 2s ease-in-out infinite;
+    }
+    @keyframes loadPulse {
+      0%,100%{ opacity:0.5; transform:scale(1); }
+      50%    { opacity:1;   transform:scale(1.08); }
+    }
+    .load-text {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic; font-size: 1rem;
+      color: var(--mauve); letter-spacing: 0.1em;
+    }
+
+    /* ════════════════════════════════════════
+       ERROR
+    ════════════════════════════════════════ */
+    #error {
+      display: none; position: fixed; inset: 0; z-index: 400;
+      background: var(--night);
+      align-items: center; justify-content: center;
+      flex-direction: column; text-align: center; padding: 40px;
+    }
+    #error.show { display: flex; }
+    .err-icon { font-size: 3rem; margin-bottom: 20px; }
+    .err-head {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.8rem; font-style: italic;
+      color: var(--cream); margin-bottom: 10px;
+    }
+    .err-body { font-size: 0.88rem; color: var(--mauve); line-height: 1.7; }
+
+    /* ════════════════════════════════════════
+       OPENING SCENE — two stars merging
+    ════════════════════════════════════════ */
+    #scene-opening {
+      position: relative; z-index: 10;
+      min-height: 100dvh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 40px 24px;
+      overflow: hidden;
+    }
+
+    /* radial glow behind the merge point */
+    #scene-opening::before {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 50% 40% at 50% 50%,
+          rgba(192,40,74,0) 0%, transparent 70%);
+      transition: background 2s ease;
+      pointer-events: none;
+    }
+    #scene-opening.glow::before {
+      background:
+        radial-gradient(ellipse 50% 40% at 50% 50%,
+          rgba(192,40,74,0.18) 0%, transparent 70%);
+    }
+
+    .opening-stars-wrap {
+      position: relative;
+      width: 200px; height: 120px;
+      margin-bottom: 32px;
+    }
+    .o-star {
+      position: absolute;
+      top: 50%; transform: translateY(-50%);
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      opacity: 0;
+    }
+    .o-star-left {
+      left: 0;
+      background: radial-gradient(circle, #F5D490 0%, rgba(200,144,74,0) 70%);
+      box-shadow: 0 0 16px 6px rgba(200,144,74,0.6);
+      animation: starLeft 3s cubic-bezier(0.4,0,0.2,1) 0.8s forwards;
+    }
+    .o-star-right {
+      right: 0;
+      background: radial-gradient(circle, #FFB0C8 0%, rgba(192,40,74,0) 70%);
+      box-shadow: 0 0 16px 6px rgba(192,40,74,0.6);
+      animation: starRight 3s cubic-bezier(0.4,0,0.2,1) 0.8s forwards;
+    }
+    @keyframes starLeft {
+      0%   { left: 0;   opacity: 0; }
+      15%  { opacity: 1; }
+      100% { left: calc(50% - 8px); opacity: 0; }
+    }
+    @keyframes starRight {
+      0%   { right: 0;  opacity: 0; }
+      15%  { opacity: 1; }
+      100% { right: calc(50% - 8px); opacity: 0; }
+    }
+
+    /* merged heart that bursts after stars meet */
+    .o-heart {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      font-size: 2.8rem;
+      opacity: 0;
+      animation: heartBurst 1s ease 3.4s forwards;
+      filter: drop-shadow(0 0 20px rgba(192,40,74,0.8));
+    }
+    @keyframes heartBurst {
+      0%  { transform: translate(-50%,-50%) scale(0);  opacity: 0; }
+      50% { transform: translate(-50%,-50%) scale(1.3); opacity: 1; }
+      100%{ transform: translate(-50%,-50%) scale(1);  opacity: 1; }
+    }
+
+    .opening-title {
+      font-family: 'Dancing Script', cursive;
+      font-size: clamp(2.4rem, 9vw, 4.5rem);
+      font-weight: 700;
+      color: var(--gold3);
+      text-align: center;
+      line-height: 1.1;
+      text-shadow: 0 0 40px rgba(200,144,74,0.4);
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 1s ease, transform 1s ease;
+      margin-bottom: 8px;
+    }
+    .opening-title.show { opacity: 1; transform: translateY(0); }
+
+    .opening-names {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(1rem, 3.5vw, 1.4rem);
+      color: rgba(253,245,232,0.6);
+      text-align: center;
+      letter-spacing: 0.12em;
+      opacity: 0;
+      transition: opacity 0.9s ease 0.3s;
+      margin-bottom: 48px;
+    }
+    .opening-names.show { opacity: 1; }
+
+    .opening-scroll {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 8px;
+      opacity: 0; transition: opacity 0.8s ease 0.6s;
+    }
+    .opening-scroll.show { opacity: 1; }
+    .scroll-text {
+      font-size: 0.7rem; color: var(--mauve);
+      letter-spacing: 0.16em; text-transform: uppercase;
+    }
+    .scroll-line {
+      width: 1px; height: 48px;
+      background: linear-gradient(to bottom, rgba(138,88,112,0.6), transparent);
+      animation: scrollLinePulse 2s ease-in-out infinite;
+    }
+    @keyframes scrollLinePulse {
+      0%,100%{ transform: scaleY(1); opacity:0.5; }
+      50%    { transform: scaleY(1.1); opacity:1; }
+    }
+
+    /* ════════════════════════════════════════
+       TIMELINE BODY
+    ════════════════════════════════════════ */
+    #timeline {
+      position: relative;
+      z-index: 10;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 0 20px 120px;
+    }
+
+    /* the vertical constellation thread */
+    .thread {
+      position: absolute;
+      left: 50%;
+      top: 0; bottom: 0;
+      width: 1px;
+      background: linear-gradient(to bottom,
+        transparent 0%,
+        var(--thread) 5%,
+        var(--thread) 95%,
+        transparent 100%
+      );
+      transform: translateX(-50%);
+      z-index: 1;
+    }
+
+    /* ── MILESTONE ─────────────────────────── */
+    .milestone {
+      position: relative;
+      z-index: 2;
+      margin-bottom: clamp(60px, 12vw, 100px);
+      opacity: 0;
+      transform: translateY(32px);
+      transition: opacity 0.9s cubic-bezier(0.22,1,0.36,1),
+                  transform 0.9s cubic-bezier(0.22,1,0.36,1);
+    }
+    .milestone.reveal { opacity: 1; transform: translateY(0); }
+
+    /* alternating left/right layout */
+    .milestone:nth-child(odd)  .ms-layout { flex-direction: row; }
+    .milestone:nth-child(even) .ms-layout { flex-direction: row-reverse; }
+
+    .ms-layout {
+      display: flex;
+      align-items: flex-start;
+      gap: 0;
+    }
+
+    /* ── CONTENT SIDE ──────────────────────── */
+    .ms-content {
+      flex: 1;
+      padding: 0 clamp(16px, 4vw, 32px);
+    }
+
+    .milestone:nth-child(odd)  .ms-content { text-align: left; }
+    .milestone:nth-child(even) .ms-content { text-align: right; }
+
+    /* date chip */
+    .ms-date {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--gold2);
+      background: rgba(200,144,74,0.1);
+      border: 1px solid rgba(200,144,74,0.2);
+      padding: 5px 13px;
+      border-radius: 100px;
+      margin-bottom: 12px;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.6s ease 0.15s, transform 0.6s ease 0.15s;
+    }
+    .milestone.reveal .ms-date { opacity: 1; transform: translateY(0); }
+
+    /* milestone title */
+    .ms-title {
+      font-family: 'Dancing Script', cursive;
+      font-size: clamp(1.4rem, 5.5vw, 2.1rem);
+      font-weight: 700;
+      color: var(--cream);
+      line-height: 1.15;
+      margin-bottom: 10px;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.7s ease 0.25s, transform 0.7s ease 0.25s;
+    }
+    .milestone.reveal .ms-title { opacity: 1; transform: translateY(0); }
+
+    /* caption */
+    .ms-caption {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(1rem, 3.2vw, 1.15rem);
+      color: rgba(253,245,232,0.7);
+      line-height: 1.75;
+      font-weight: 300;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.7s ease 0.35s, transform 0.7s ease 0.35s;
+    }
+    .milestone.reveal .ms-caption { opacity: 1; transform: translateY(0); }
+
+    /* ── SPINE NODE ─────────────────────────── */
+    .ms-node {
+      flex-shrink: 0;
+      width: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      padding-top: 8px;
+    }
+
+    .node-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: var(--rose);
+      box-shadow:
+        0 0 0 3px rgba(192,40,74,0.2),
+        0 0 12px rgba(192,40,74,0.5);
+      opacity: 0;
+      transform: scale(0);
+      transition: opacity 0.5s ease 0.05s, transform 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.05s;
+      z-index: 3;
+    }
+    .milestone.reveal .node-dot { opacity: 1; transform: scale(1); }
+
+    /* ── PHOTO SIDE ─────────────────────────── */
+    .ms-photo-side {
+      flex: 1;
+      padding: 0 clamp(16px, 4vw, 32px);
+      opacity: 0;
+      transform: scale(0.94);
+      transition: opacity 0.8s ease 0.2s, transform 0.8s cubic-bezier(0.22,1,0.36,1) 0.2s;
+    }
+    .milestone.reveal .ms-photo-side { opacity: 1; transform: scale(1); }
+
+    .ms-photo-frame {
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #1A0C18;
+      box-shadow:
+        0 8px 32px rgba(0,0,0,0.6),
+        0 0 0 1px rgba(200,144,74,0.12);
+    }
+
+    /* film-strip top and bottom */
+    .ms-photo-frame::before,
+    .ms-photo-frame::after {
+      content: '';
+      position: absolute;
+      left: 0; right: 0;
+      height: 28px;
+      z-index: 2;
+      pointer-events: none;
+      background-image: repeating-linear-gradient(
+        90deg,
+        transparent, transparent 10px,
+        rgba(0,0,0,0.8) 10px, rgba(0,0,0,0.8) 18px
+      );
+    }
+    .ms-photo-frame::before { top: 0; }
+    .ms-photo-frame::after  { bottom: 0; }
+
+    /* dark vignette over photo */
+    .ms-photo-vignette {
+      position: absolute;
+      inset: 0; z-index: 1;
+      background: radial-gradient(ellipse at center,
+        transparent 40%, rgba(5,3,8,0.55) 100%);
+      pointer-events: none;
+    }
+
+    .ms-photo {
+      width: 100%;
+      aspect-ratio: 4/3;
+      object-fit: cover;
+      display: block;
+      filter: saturate(0.85) contrast(1.05);
+      transition: filter 0.4s ease, transform 0.4s ease;
+    }
+    .ms-photo-frame:hover .ms-photo {
+      filter: saturate(1.05) contrast(1.05);
+      transform: scale(1.02);
+    }
+
+    /* no-photo placeholder */
+    .ms-photo-placeholder {
+      width: 100%;
+      aspect-ratio: 4/3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(2rem, 8vw, 3rem);
+      background: linear-gradient(135deg, #1A0C18, #2A1028);
+      color: rgba(200,144,74,0.3);
+    }
+
+    /* ── FIRST MILESTONE (special: "The Beginning") ─ */
+    .milestone.first .ms-photo-frame {
+      box-shadow:
+        0 8px 32px rgba(0,0,0,0.6),
+        0 0 0 1px rgba(192,40,74,0.3),
+        0 0 40px rgba(192,40,74,0.1);
+    }
+    .milestone.first .node-dot {
+      width: 18px; height: 18px;
+      background: linear-gradient(135deg, var(--gold), var(--rose));
+      box-shadow: 0 0 0 4px rgba(200,144,74,0.2), 0 0 20px rgba(200,144,74,0.5);
+    }
+
+    /* ── LAST MILESTONE (special: "Now & Forever") ── */
+    .milestone.last .ms-title { color: var(--gold3); }
+    .milestone.last .node-dot {
+      width: 18px; height: 18px;
+      background: linear-gradient(135deg, var(--gold3), var(--gold));
+      box-shadow: 0 0 0 4px rgba(200,144,74,0.25), 0 0 24px rgba(200,144,74,0.6);
+    }
+
+    /* ════════════════════════════════════════
+       CHAPTER DIVIDERS (between milestones)
+    ════════════════════════════════════════ */
+    .chapter-divider {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      padding: 8px 0 clamp(40px,8vw,72px);
+      opacity: 0;
+      transition: opacity 0.8s ease;
+    }
+    .chapter-divider.reveal { opacity: 1; }
+    .chapter-text {
+      display: inline-flex; align-items: center; gap: 12px;
+      font-size: 0.65rem; color: rgba(138,88,112,0.45);
+      letter-spacing: 0.2em; text-transform: uppercase;
+    }
+    .chapter-line { width: 40px; height: 1px; background: rgba(138,88,112,0.2); }
+
+    /* ════════════════════════════════════════
+       ENDING — names in starlight
+    ════════════════════════════════════════ */
+    #section-ending {
+      position: relative; z-index: 10;
+      min-height: 80dvh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 60px 24px 80px;
+      text-align: center;
+    }
+
+    #section-ending::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 70% 50% at 50% 50%,
+        rgba(192,40,74,0.07) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .ending-ornament {
+      font-size: 1.4rem; letter-spacing: 0.5em;
+      color: var(--gold2); opacity: 0.5;
+      margin-bottom: 28px;
+      opacity: 0; transition: opacity 1s ease;
+    }
+    .ending-ornament.reveal { opacity: 0.5; }
+
+    .ending-quote {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(1.1rem, 4vw, 1.5rem);
+      color: rgba(253,245,232,0.55);
+      max-width: 440px;
+      line-height: 1.75;
+      margin-bottom: 32px;
+      opacity: 0; transform: translateY(12px);
+      transition: opacity 1s ease 0.2s, transform 1s ease 0.2s;
+    }
+    .ending-quote.reveal { opacity: 1; transform: translateY(0); }
+
+    .ending-names {
+      font-family: 'Dancing Script', cursive;
+      font-size: clamp(2.2rem, 9vw, 4rem);
+      font-weight: 700;
+      line-height: 1.1;
+      background: linear-gradient(135deg, var(--gold3), var(--rose2), var(--gold2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 0 30px rgba(200,144,74,0.3));
+      margin-bottom: 12px;
+      opacity: 0; transform: translateY(14px);
+      transition: opacity 1s ease 0.4s, transform 1s ease 0.4s;
+    }
+    .ending-names.reveal { opacity: 1; transform: translateY(0); }
+
+    .ending-forever {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(0.9rem, 3vw, 1.15rem);
+      color: rgba(138,88,112,0.65);
+      letter-spacing: 0.14em;
+      margin-bottom: 48px;
+      opacity: 0; transition: opacity 1s ease 0.6s;
+    }
+    .ending-forever.reveal { opacity: 1; }
+
+    /* share & expiry */
+    .ending-actions {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 16px;
+      opacity: 0; transition: opacity 0.9s ease 0.8s;
+    }
+    .ending-actions.reveal { opacity: 1; }
+
+    .share-row {
+      display: flex; gap: 10px;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .share-btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-family: 'DM Sans', sans-serif; font-size: 0.82rem;
+      font-weight: 500; padding: 11px 20px;
+      border-radius: 100px; border: none; cursor: pointer;
+      text-decoration: none; white-space: nowrap;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .share-btn:hover { transform: translateY(-2px); }
+    .btn-wa  { background:#25D366; color:#fff; box-shadow:0 4px 16px rgba(37,211,102,0.3); }
+    .btn-ms  { background:#0078FF; color:#fff; box-shadow:0 4px 16px rgba(0,120,255,0.3); }
+    .btn-cp  { background:rgba(253,245,232,0.08); color:var(--cream); border:1px solid rgba(253,245,232,0.16); }
+
+    .ending-expiry {
+      font-size: 0.7rem; color: rgba(138,88,112,0.5);
+      display: flex; align-items: center;
+      justify-content: center; gap: 6px;
+    }
+    .exp-dot {
+      width: 4px; height: 4px; border-radius: 50%;
+      background: var(--rose);
+      animation: loadPulse 2.4s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+    .ending-brand {
+      font-size: 0.68rem; color: rgba(138,88,112,0.35);
+    }
+    .ending-brand a { color: rgba(192,40,74,0.45); text-decoration: none; }
+    .ending-brand a:hover { color: var(--rose); }
+
+    /* ════════════════════════════════════════
+       MOBILE — stack vertically under 560px
+    ════════════════════════════════════════ */
+    @media (max-width: 560px) {
+      .thread { left: 20px; }
+
+      .ms-layout { flex-direction: column !important; }
+      .milestone:nth-child(odd)  .ms-content,
+      .milestone:nth-child(even) .ms-content { text-align: left; }
+
+      .ms-node {
+        position: absolute;
+        left: 20px; top: 4px;
+        transform: translateX(-50%);
+        width: 24px;
+      }
+      .ms-content { padding-left: 44px; padding-right: 0; order: 1; }
+      .ms-photo-side { padding: 0; order: 2; margin-top: 16px; }
+
+      .milestone { padding-left: 8px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="star-canvas"></canvas>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="load-stars">✦ 💫 ✦</div>
+  <div class="load-text">Unfolding your story...</div>
+</div>
+
+<!-- ERROR -->
+<div id="error">
+  <div class="err-icon">💫</div>
+  <div class="err-head">This story has closed</div>
+  <p class="err-body">Every love story deserves to be retold.<br/>This one has expired — but your story never will.</p>
+</div>
+
+<!-- OPENING SCENE -->
+<section id="scene-opening">
+  <div class="opening-stars-wrap">
+    <div class="o-star o-star-left"></div>
+    <div class="o-star o-star-right"></div>
+    <div class="o-heart">💕</div>
+  </div>
+  <h1 class="opening-title" id="opening-title">Our Story</h1>
+  <div class="opening-names" id="opening-names">—</div>
+  <div class="opening-scroll" id="opening-scroll">
+    <span class="scroll-text">scroll to begin</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- TIMELINE -->
+<div id="timeline">
+  <div class="thread"></div>
+  <div id="milestones-wrap"></div>
+</div>
+
+<!-- ENDING -->
+<section id="section-ending">
+  <div class="ending-ornament" id="ending-ornament">✦ · · · ✦</div>
+  <p class="ending-quote" id="ending-quote">
+    "Every love story is beautiful,<br/>but ours is my favourite."
+  </p>
+  <div class="ending-names" id="ending-names">—</div>
+  <div class="ending-forever">together · always · forever</div>
+  <div class="ending-actions" id="ending-actions">
+    <div class="share-row">
+      <a class="share-btn btn-wa" id="btn-wa" href="#" target="_blank">📱 Share via WhatsApp</a>
+      <a class="share-btn btn-ms" id="btn-ms" href="#" target="_blank">💬 Messenger</a>
+      <button class="share-btn btn-cp" id="btn-cp" onclick="copyLink()">📋 Copy link</button>
+    </div>
+    <div class="ending-expiry">
+      <div class="exp-dot"></div>
+      <span id="expiry-text">This story expires in 24 hours</span>
+    </div>
+    <div class="ending-brand">Created with <a href="https://loversgift.io">LoversGift</a></div>
+  </div>
+</section>
+
+<script>
+  // ─── CONFIG ──────────────────────────────────────────────────
+  const API_BASE = 'https://your-app.railway.app'; // ← YOUR RAILWAY URL
+
+  // ─── STATE ───────────────────────────────────────────────────
+  let giftData = null;
+
+  // ─── STARFIELD ───────────────────────────────────────────────
+  (function initStars() {
+    const canvas = document.getElementById('star-canvas');
+    const ctx    = canvas.getContext('2d');
+    let W, H, stars = [], rafId;
+
+    function resize() {
+      W = canvas.width  = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    const N = window.innerWidth < 640 ? 100 : 200;
+    for (let i = 0; i < N; i++) {
+      stars.push({
+        x: Math.random(), y: Math.random(),
+        r: 0.3 + Math.random() * 1.4,
+        base: 0.1 + Math.random() * 0.55,
+        speed: 0.0008 + Math.random() * 0.002,
+        phase: Math.random() * Math.PI * 2,
+        gold: Math.random() > 0.82,
+      });
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      const t = Date.now() * 0.001;
+      for (const s of stars) {
+        const a = s.base * (0.5 + 0.5 * Math.sin(t * s.speed * 60 + s.phase));
+        ctx.beginPath();
+        ctx.arc(s.x * W, s.y * H, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = s.gold
+          ? `rgba(200,144,74,${a.toFixed(2)})`
+          : `rgba(253,245,232,${a.toFixed(2)})`;
+        ctx.fill();
+      }
+      rafId = requestAnimationFrame(draw);
+    }
+    draw();
+  })();
+
+  // ─── MILESTONE PLACEHOLDERS ───────────────────────────────────
+  const MILESTONE_EMOJIS = ['💫','🌹','✨','💕','🌙','⭐','🌸','💎','🔥','🌊','🌟','💌'];
+
+  // ─── BUILD TIMELINE ───────────────────────────────────────────
+  function buildTimeline(milestones) {
+    const wrap = document.getElementById('milestones-wrap');
+    wrap.innerHTML = '';
+
+    milestones.forEach((ms, i) => {
+      const isFirst = i === 0;
+      const isLast  = i === milestones.length - 1;
+
+      // Chapter divider between milestones
+      if (i > 0) {
+        const div = document.createElement('div');
+        div.className = 'chapter-divider';
+        div.innerHTML = `<div class="chapter-text"><div class="chapter-line"></div>✦<div class="chapter-line"></div></div>`;
+        wrap.appendChild(div);
+      }
+
+      // Milestone element
+      const el = document.createElement('div');
+      el.className = `milestone${isFirst ? ' first' : ''}${isLast ? ' last' : ''}`;
+
+      const emoji  = MILESTONE_EMOJIS[i % MILESTONE_EMOJIS.length];
+      const dateStr = ms.date
+        ? formatDate(ms.date)
+        : (isFirst ? 'The Beginning' : isLast ? 'Now & Forever' : `Chapter ${i + 1}`);
+
+      // photo or placeholder
+      const photoHtml = ms.photoUrl
+        ? `<div class="ms-photo-frame">
+             <div class="ms-photo-vignette"></div>
+             <img class="ms-photo" src="${ms.photoUrl}" alt="${ms.title || ''}" loading="lazy" />
+           </div>`
+        : `<div class="ms-photo-frame">
+             <div class="ms-photo-placeholder">${emoji}</div>
+           </div>`;
+
+      el.innerHTML = `
+        <div class="ms-layout">
+          <div class="ms-content">
+            <div class="ms-date">✦ ${dateStr}</div>
+            <div class="ms-title">${ms.title || (isFirst ? 'The Beginning' : isLast ? 'Now & Forever' : 'A Memory')}</div>
+            ${ms.caption ? `<div class="ms-caption">${ms.caption}</div>` : ''}
+          </div>
+          <div class="ms-node"><div class="node-dot"></div></div>
+          <div class="ms-photo-side">${photoHtml}</div>
+        </div>
+      `;
+      wrap.appendChild(el);
+    });
+  }
+
+  // ─── DATE FORMATTER ───────────────────────────────────────────
+  function formatDate(dateStr) {
+    try {
+      const d = new Date(dateStr + (dateStr.length === 7 ? '-01' : '') + 'T12:00:00');
+      if (dateStr.length === 7) {
+        return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+      }
+      return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    } catch { return dateStr; }
+  }
+
+  // ─── PARSE MILESTONES FROM extra_data OR message ─────────────
+  // Senders enter data in the message field as structured text:
+  //   DATE: 2022-06-14
+  //   TITLE: The Day We Met
+  //   CAPTION: It started with a coffee and ended with forever.
+  //   ---
+  //   DATE: 2022-12-25
+  //   TITLE: First Christmas Together
+  //   CAPTION: You wore that ridiculous hat and I fell more in love.
+  // Photos come from extra_data.milestones[].photoUrl (uploaded separately)
+  function parseMilestones(gift) {
+    // If extra_data has milestones (from timeline-upload flow), use those
+    if (gift.extraData && gift.extraData.milestones && gift.extraData.milestones.length > 0) {
+      return gift.extraData.milestones;
+    }
+
+    // Otherwise parse from message text
+    const message = gift.message || '';
+    const blocks  = message.split(/\n---+\n/);
+
+    if (blocks.length > 1) {
+      return blocks.map(block => {
+        const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
+        const ms = {};
+        for (const line of lines) {
+          if (line.startsWith('DATE:'))    ms.date    = line.slice(5).trim();
+          if (line.startsWith('TITLE:'))   ms.title   = line.slice(6).trim();
+          if (line.startsWith('CAPTION:')) ms.caption = line.slice(8).trim();
+        }
+        return ms;
+      }).filter(ms => ms.title || ms.date);
+    }
+
+    // Fallback: single paragraph lines as milestones
+    const lines = message.split('\n').map(l => l.trim()).filter(Boolean);
+    return lines.map((line, i) => ({
+      title: i === 0 ? 'The Beginning' : i === lines.length - 1 ? 'Now & Forever' : `Chapter ${i + 1}`,
+      caption: line,
+    }));
+  }
+
+  // ─── SCROLL REVEAL ────────────────────────────────────────────
+  function setupReveal() {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('reveal');
+          io.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll(
+      '.milestone, .chapter-divider, .ending-ornament, .ending-quote, ' +
+      '.ending-names, .ending-forever, #ending-actions'
+    ).forEach(el => io.observe(el));
+  }
+
+  // ─── OPENING ANIMATION SEQUENCE ───────────────────────────────
+  function startOpening() {
+    // After stars merge (3.4s) show glow
+    setTimeout(() => {
+      document.getElementById('scene-opening').classList.add('glow');
+    }, 3200);
+
+    // Title
+    setTimeout(() => {
+      document.getElementById('opening-title').classList.add('show');
+    }, 3800);
+
+    // Names
+    setTimeout(() => {
+      document.getElementById('opening-names').classList.add('show');
+    }, 4200);
+
+    // Scroll hint
+    setTimeout(() => {
+      document.getElementById('opening-scroll').classList.add('show');
+    }, 4800);
+  }
+
+  // ─── POPULATE ENDING ──────────────────────────────────────────
+  function populateEnding(gift) {
+    const names = gift.senderName && gift.receiverName
+      ? `${gift.senderName} & ${gift.receiverName}`
+      : gift.receiverName || gift.senderName || '∞';
+    document.getElementById('ending-names').textContent = names;
+
+    const url   = gift.shareUrl || window.location.href;
+    const waMsg = encodeURIComponent(`💫 ${names} — Our Story → ${url}`);
+    document.getElementById('btn-wa').href = `https://wa.me/?text=${waMsg}`;
+    document.getElementById('btn-ms').href = `fb-messenger://share/?link=${encodeURIComponent(url)}`;
+
+    setExpiryText(gift.expiresAt);
+  }
+
+  // ─── EXPIRY ───────────────────────────────────────────────────
+  function setExpiryText(expiresAt) {
+    const el = document.getElementById('expiry-text');
+    if (!expiresAt || !el) return;
+    function update() {
+      const ms = new Date(expiresAt) - Date.now();
+      if (ms <= 0) { el.textContent = 'This story has expired'; return; }
+      const h = Math.floor(ms / 3600000);
+      const m = Math.floor((ms % 3600000) / 60000);
+      el.textContent = h > 0 ? `This story expires in ${h}h ${m}m` : `This story expires in ${m}m`;
+    }
+    update();
+    setInterval(update, 60000);
+  }
+
+  // ─── COPY LINK ────────────────────────────────────────────────
+  function copyLink() {
+    const link = giftData?.shareUrl || window.location.href;
+    navigator.clipboard.writeText(link).then(() => {
+      const btn = document.getElementById('btn-cp');
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copied!';
+      btn.style.background = 'rgba(76,175,80,0.15)';
+      btn.style.color = '#81c784';
+      setTimeout(() => {
+        btn.textContent = orig; btn.style.background = ''; btn.style.color = '';
+      }, 2500);
+    });
+  }
+
+  // ─── DEMO DATA ────────────────────────────────────────────────
+  const DEMO_GIFT = {
+    receiverName: 'Sofia',
+    senderName:   'Marco',
+    message: `DATE: 2021-03-14
+TITLE: The Day We Met
+CAPTION: A Tuesday afternoon that changed everything. You laughed at something I said and I knew — I was done for.
+---
+DATE: 2021-06-21
+TITLE: First Summer Together
+CAPTION: That road trip with no plan, just music and you in the passenger seat. I would drive that road forever.
+---
+DATE: 2021-12-25
+TITLE: First Christmas
+CAPTION: You wore that ridiculous jumper and made everyone laugh. I watched you from across the room and felt completely home.
+---
+DATE: 2022-04-02
+TITLE: The Trip to Lisbon
+CAPTION: Three days, seventeen cups of coffee, and a hundred moments I've replayed ever since.
+---
+DATE: 2022-09-10
+TITLE: Moving In Together
+CAPTION: Boxes everywhere, takeaway on the floor, and you — making even the chaos feel like the right kind of chaos.
+---
+DATE: Now
+TITLE: Now & Forever
+CAPTION: Every ordinary day with you is the best day of my life. This is our story, and I never want it to end.`,
+    extraData: { milestones: [] },
+    theme: 'rose',
+    expiresAt: new Date(Date.now() + 23 * 3600 * 1000).toISOString(),
+    shareUrl: window.location.href,
+  };
+
+  // ─── LOAD GIFT ────────────────────────────────────────────────
+  async function loadGift() {
+    let code = '';
+    const parts = window.location.pathname.split('/');
+    const gIdx  = parts.indexOf('g');
+    if (gIdx !== -1 && parts[gIdx + 1]) code = parts[gIdx + 1];
+    else code = new URLSearchParams(window.location.search).get('code') || '';
+
+    const useDemo = window.location.search.includes('demo');
+
+    if (!code && !useDemo) {
+      document.getElementById('loading').classList.add('gone');
+      document.getElementById('error').classList.add('show');
+      return;
+    }
+
+    try {
+      if (!useDemo) {
+        const resp = await fetch(`${API_BASE}/api/gifts/${code}/view`);
+        const data = await resp.json();
+        if (!resp.ok || data.expired || data.error) {
+          document.getElementById('loading').classList.add('gone');
+          document.getElementById('error').classList.add('show');
+          return;
+        }
+        giftData = data.gift;
+      } else {
+        giftData = DEMO_GIFT;
+      }
+
+      // Build opening names
+      const names = giftData.senderName && giftData.receiverName
+        ? `${giftData.senderName} & ${giftData.receiverName}`
+        : giftData.receiverName || giftData.senderName || '';
+      document.getElementById('opening-names').textContent = names;
+
+      // Parse & build milestones
+      const milestones = parseMilestones(giftData);
+      buildTimeline(milestones);
+
+      // Populate ending
+      populateEnding(giftData);
+
+      // Fade out loading
+      const loadEl = document.getElementById('loading');
+      loadEl.classList.add('out');
+      setTimeout(() => {
+        loadEl.classList.add('gone');
+        startOpening();
+        // Setup scroll reveal after a moment
+        setTimeout(setupReveal, 500);
+      }, 1000);
+
+    } catch(err) {
+      if (useDemo) {
+        giftData = DEMO_GIFT;
+        const names = `${giftData.senderName} & ${giftData.receiverName}`;
+        document.getElementById('opening-names').textContent = names;
+        buildTimeline(parseMilestones(giftData));
+        populateEnding(giftData);
+        const loadEl = document.getElementById('loading');
+        loadEl.classList.add('out');
+        setTimeout(() => {
+          loadEl.classList.add('gone');
+          startOpening();
+          setTimeout(setupReveal, 500);
+        }, 1000);
+      } else {
+        document.getElementById('loading').classList.add('gone');
+        document.getElementById('error').classList.add('show');
+      }
+    }
+  }
+
+  loadGift();
+</script>
+</body>
+</html>

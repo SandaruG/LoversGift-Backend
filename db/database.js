@@ -49,7 +49,7 @@ function setupSchema() {
     CREATE TABLE IF NOT EXISTS orders (
       id               INTEGER PRIMARY KEY AUTOINCREMENT,
       order_ref        TEXT UNIQUE NOT NULL, -- our internal ref e.g. "LG-xK9m2p"
-      paypal_order_id  TEXT UNIQUE,          -- PayPal's order ID from createOrder
+      provider_order_id TEXT,                -- gateway-specific reference (Whop checkout id)
       product_id       INTEGER REFERENCES products(id),
       amount_cents     INTEGER NOT NULL,
       currency         TEXT    NOT NULL DEFAULT 'USD',
@@ -89,7 +89,16 @@ function setupSchema() {
 
   // Seed products if empty
   const count = db.prepare('SELECT COUNT(*) as n FROM products').get().n;
-  if (count === 0) seedProducts();
+  if (count === 0) {
+    seedProducts();
+  } else {
+    migrateProductPricing();
+  }
+}
+
+function migrateProductPricing() {
+  const paidPriceCents = 300;
+  db.prepare(`UPDATE products SET price_cents = ? WHERE price_cents > 0`).run(paidPriceCents);
 }
 
 function seedProducts() {
@@ -114,7 +123,7 @@ function seedProducts() {
       emoji: '💌',
       bg_gradient: 'linear-gradient(135deg,#1C0C14,#3D1A28)',
       description: 'A hand-written style letter that reveals word by word, with a soft rose theme and your personal message.',
-      price_cents: 499,
+      price_cents: 300,
       badge: 'hot', badge_label: '🔥 Popular',
       stars: 5, review_count: 412,
       features: JSON.stringify(['Typewriter animation','Custom names & message','Rose or navy theme','Mobile-first design','Shareable in seconds']),
@@ -127,7 +136,7 @@ function seedProducts() {
       emoji: '🎂',
       bg_gradient: 'linear-gradient(135deg,#1A0F00,#3D2800)',
       description: 'Confetti, their favourite photo, and your birthday message — waiting for them the moment they open the link.',
-      price_cents: 399,
+      price_cents: 300,
       badge: 'new', badge_label: '✨ New',
       stars: 5, review_count: 289,
       features: JSON.stringify(['Confetti animation','Photo upload support','Birthday countdown','Custom colour theme','WhatsApp-ready link']),
@@ -140,7 +149,7 @@ function seedProducts() {
       emoji: '💑',
       bg_gradient: 'linear-gradient(135deg,#0A0F1A,#1A2840)',
       description: 'A scrollable journey through your relationship — add dates, milestones, and photos for each chapter.',
-      price_cents: 699,
+      price_cents: 300,
       badge: null, badge_label: null,
       stars: 5, review_count: 178,
       features: JSON.stringify(['Unlimited milestones','Photo per milestone','Animated scroll reveal','Couples theme','Printable PDF option']),
@@ -153,7 +162,7 @@ function seedProducts() {
       emoji: '📬',
       bg_gradient: 'linear-gradient(135deg,#120A1A,#2A1040)',
       description: 'A collection of sealed letters they open for specific moments — "open when you miss me", "open when you need a laugh".',
-      price_cents: 549,
+      price_cents: 300,
       badge: null, badge_label: null,
       stars: 4, review_count: 95,
       features: JSON.stringify(['Up to 8 sealed letters','Custom trigger phrases','Reveal animation','Long-distance favourite','Mobile optimised']),
@@ -166,7 +175,7 @@ function seedProducts() {
       emoji: '🌹',
       bg_gradient: 'linear-gradient(135deg,#1A0808,#3D1010)',
       description: '30 animated cards that flip one by one, each revealing a personal reason you love them.',
-      price_cents: 449,
+      price_cents: 300,
       badge: null, badge_label: null,
       stars: 5, review_count: 203,
       features: JSON.stringify(['Up to 30 reasons','Card flip animation','Custom names','4 colour themes','No sign-up needed']),
@@ -192,7 +201,7 @@ function seedProducts() {
       emoji: '🎁',
       bg_gradient: 'linear-gradient(135deg,#1A0F00,#3D2200)',
       description: 'A mystery box that slowly unwraps on screen — reveal a surprise gift, trip, or experience in style.',
-      price_cents: 349,
+      price_cents: 300,
       badge: null, badge_label: null,
       stars: 4, review_count: 67,
       features: JSON.stringify(['Unwrap animation','Custom reveal message','Photo support','Shareable link','Any occasion']),
@@ -205,15 +214,54 @@ function seedProducts() {
       emoji: '🎵',
       bg_gradient: 'linear-gradient(135deg,#0A0A1A,#181040)',
       description: 'A dedicated page for your song — with lyrics, the story of how it became yours, and a Spotify play button.',
-      price_cents: 599,
+      price_cents: 300,
       badge: 'new', badge_label: '✨ New',
       stars: 5, review_count: 44,
       features: JSON.stringify(['Spotify embed','Animated lyrics (optional)','Your story section','Album art display','Couples photo option']),
       sort_order: 8,
     },
+    {
+      slug: 'secret-confession',
+      title: 'Secret Confession',
+      category: 'love',
+      emoji: '🕯️',
+      bg_gradient: 'linear-gradient(135deg,#07030F,#1A0C0F)',
+      description: 'Confess your deepest feelings in a candlelit moment — intimate, emotional, and unforgettable.',
+      price_cents: 300,
+      badge: 'new', badge_label: '✨ New',
+      stars: 5, review_count: 128,
+      features: JSON.stringify(['Candlelit ambiance','Rain animation','Emotional reveal','Custom message','Mobile optimised']),
+      sort_order: 9,
+    },
+    {
+      slug: 'our-world-page',
+      title: 'Our World Page',
+      category: 'anniversary',
+      emoji: '🌍',
+      bg_gradient: 'linear-gradient(135deg,#0A0510,#1A0820)',
+      description: 'Create a personalized world with your photos, memories, and locations that matter to both of you.',
+      price_cents: 300,
+      badge: 'new', badge_label: '✨ New',
+      stars: 5, review_count: 89,
+      features: JSON.stringify(['Custom world map','Photo gallery','Location markers','Interactive exploration','Shareable album']),
+      sort_order: 10,
+    },
+    {
+      slug: 'universe-of-moments',
+      title: 'Universe of Moments',
+      category: 'surprise',
+      emoji: '🌌',
+      bg_gradient: 'linear-gradient(135deg,#0A0515,#1A0A2A)',
+      description: 'Journey through your relationship like stars in a universe — each moment shining bright and unique.',
+      price_cents: 300,
+      badge: null, badge_label: null,
+      stars: 5, review_count: 76,
+      features: JSON.stringify(['Star animations','Memory timeline','Photo display','Cosmic theme','Full customization']),
+      sort_order: 11,
+    },
   ]);
 
-  console.log('✅  Seeded 8 default products.');
+  console.log('✅  Seeded 11 default products.');
 }
 
 module.exports = { getDb };

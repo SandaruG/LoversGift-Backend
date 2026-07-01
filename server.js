@@ -10,7 +10,7 @@ const { getDb }           = require('./db/database');
 const { startCleanupJob } = require('./db/cleanup');
 const productsRouter      = require('./routes/products');
 const giftsRouter         = require('./routes/gifts');
-const paymentRouter       = require('./routes/payment');
+const { router: paymentRouter } = require('./routes/payment');
 const adminAuth           = require('./middleware/adminAuth');
 
 const app  = express();
@@ -38,13 +38,15 @@ app.use('/gifts', express.static(path.join(__dirname, 'public', 'gifts')));
 const PRODUCT_PAGE_MAP = {
   'animated-love-letter':   'gift-letter.html',
   'birthday-surprise-page': 'gift-birthday.html',
+  'relationship-timeline':  'gift-timeline.html',
+  'open-when-letters':      'gift-timeline.html', // fallback
+  'reasons-i-love-you':     'gift-reasons.html',
   'simple-love-note':       'gift-love-note.html',
-  // coming soon — uncomment as you build each one:
-  // 'open-when-letters':      'gift-open-when.html',
-  // 'relationship-timeline':  'gift-timeline.html',
-  // 'reasons-i-love-you':    'gift-reasons.html',
-  // 'secret-gift-reveal':    'gift-reveal.html',
-  // 'our-song-page':         'gift-song.html',
+  'secret-gift-reveal':     'gift-love-note.html', // fallback
+  'our-song-page':          'gift-love-note.html', // fallback
+  'secret-confession':      'gift-confession.html',
+  'our-world-page':         'gift-our-world.html',
+  'universe-of-moments':    'gift-universe.html',
 };
 
 app.get('/g/:code', (req, res) => {
@@ -100,7 +102,7 @@ app.get('/health', (_req, res) => {
     time: new Date().toISOString(),
     products: productCount,
     activeGifts,
-    paypal: process.env.PAYPAL_ENV || 'sandbox',
+    payment: process.env.WHOP_API_KEY ? 'whop' : 'disabled',
   });
 });
 
@@ -113,6 +115,7 @@ app.get('/', (_req, res) => {
       giftPage:       'GET  /g/:code  → animated love letter page',
       products:       'GET  /api/products',
       createOrder:    'POST /api/payment/create-order',
+      checkoutWebhook:'POST /api/payment/whop/webhook',
       capturePayment: 'POST /api/payment/capture',
       freeGift:       'POST /api/payment/free-gift',
       viewGift:       'GET  /api/gifts/:code/view',
@@ -132,13 +135,12 @@ app.use((err, _req, res, _next) => {
 
 // ── Start ──────────────────────────────────────────────────────
 app.listen(PORT, () => {
-  const env = process.env.PAYPAL_ENV || 'sandbox';
   console.log(`
 💕 LoversGift Backend v2.0
    ┌──────────────────────────────────────────┐
    │  http://localhost:${PORT}                     │
    │  Gift pages: /g/:code                    │
-   │  PayPal: ${env === 'live' ? '🟢 LIVE (real money)    ' : '🟡 SANDBOX (test mode) '}   │
+   │  Payment: Whop checkout webhook          │
    │  DB: SQLite (loversgift.db)              │
    └──────────────────────────────────────────┘
   `);

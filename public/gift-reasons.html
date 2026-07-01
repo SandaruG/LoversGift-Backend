@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Reasons I Love You 🌹</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500;1,600&family=DM+Sans:wght@300;400;500&family=Dancing+Script:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --night:      #060308;
+      --velvet:     #110820;
+      --leather:    #1A0C08;
+      --leather2:   #261208;
+      --paper:      #F8F0E3;
+      --paper2:     #EDE0CC;
+      --ink:        #1C0E06;
+      --ink-soft:   #5A3A20;
+      --rose:       #C0284A;
+      --rose-soft:  #E04868;
+      --rose-dim:   #801830;
+      --gold:       #C8904A;
+      --gold-soft:  #E8B870;
+      --gold-bright:#F5D080;
+      --cream:      #FDF5E8;
+      --mauve:      #8A5870;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--night);
+      overflow: hidden;
+      font-family: 'DM Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* ═══════════════════════════════════════
+       VELVET SURFACE
+    ═══════════════════════════════════════ */
+    #surface {
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 120% 80% at 50% 110%, rgba(60,10,40,0.6) 0%, transparent 65%),
+        radial-gradient(ellipse 80% 50% at 20% 0%,   rgba(30,5,60,0.3) 0%, transparent 60%),
+        linear-gradient(160deg, #0A0414 0%, #060308 50%, #0E0610 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* subtle velvet texture via repeating gradient */
+    #surface::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        repeating-linear-gradient(
+          45deg,
+          rgba(255,255,255,0.008) 0px,
+          rgba(255,255,255,0.008) 1px,
+          transparent 1px,
+          transparent 6px
+        );
+    }
+
+    /* floating dust motes */
+    .mote {
+      position: fixed;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 1;
+      animation: moteDrift linear infinite;
+      opacity: 0;
+    }
+    @keyframes moteDrift {
+      0%   { transform: translateY(100vh) translateX(0);      opacity: 0; }
+      10%  { opacity: var(--op); }
+      90%  { opacity: var(--op); }
+      100% { transform: translateY(-10vh) translateX(var(--dx)); opacity: 0; }
+    }
+
+    /* ═══════════════════════════════════════
+       LOADING
+    ═══════════════════════════════════════ */
+    #loading {
+      position: fixed;
+      inset: 0;
+      z-index: 300;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--night);
+      transition: opacity 1s ease;
+    }
+    #loading.out { opacity: 0; pointer-events: none; }
+    #loading.gone { display: none; }
+
+    .load-icon {
+      font-size: 2.4rem;
+      margin-bottom: 18px;
+      animation: loadBreath 2s ease-in-out infinite;
+    }
+    @keyframes loadBreath {
+      0%, 100% { transform: scale(1) rotate(-3deg); opacity: 0.7; }
+      50%       { transform: scale(1.1) rotate(3deg); opacity: 1; }
+    }
+    .load-text {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: 1rem;
+      color: var(--mauve);
+      letter-spacing: 0.1em;
+    }
+
+    /* ═══════════════════════════════════════
+       ERROR
+    ═══════════════════════════════════════ */
+    #error {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+      padding: 40px;
+      background: var(--night);
+    }
+    #error.show { display: flex; }
+    .err-icon { font-size: 3rem; margin-bottom: 20px; }
+    .err-head {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.8rem;
+      font-style: italic;
+      color: var(--cream);
+      margin-bottom: 10px;
+    }
+    .err-body { font-size: 0.88rem; color: var(--mauve); line-height: 1.7; }
+
+    /* ═══════════════════════════════════════
+       COVER SCENE
+    ═══════════════════════════════════════ */
+    #scene-cover {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+      pointer-events: none;
+    }
+    #scene-cover.show {
+      opacity: 1;
+      pointer-events: all;
+    }
+    #scene-cover.out {
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(1.04);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    /* book cover */
+    .cover-book {
+      position: relative;
+      width: clamp(220px, 58vw, 300px);
+      cursor: pointer;
+      filter: drop-shadow(0 28px 60px rgba(0,0,0,0.7)) drop-shadow(0 0 40px rgba(192,40,74,0.15));
+      animation: coverFloat 5s ease-in-out infinite;
+      transition: filter 0.3s ease;
+    }
+    .cover-book:hover {
+      filter: drop-shadow(0 28px 60px rgba(0,0,0,0.7)) drop-shadow(0 0 60px rgba(200,144,74,0.35));
+    }
+    @keyframes coverFloat {
+      0%, 100% { transform: translateY(0) rotate(-1.5deg); }
+      50%       { transform: translateY(-10px) rotate(1deg); }
+    }
+
+    .cover-svg { width: 100%; display: block; }
+
+    /* cover title text */
+    .cover-text {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 24px;
+      text-align: center;
+    }
+    .cover-title-small {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(0.65rem, 2.2vw, 0.85rem);
+      font-style: italic;
+      color: rgba(200,144,74,0.65);
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .cover-title-main {
+      font-family: 'Dancing Script', cursive;
+      font-size: clamp(1.5rem, 5.5vw, 2.2rem);
+      font-weight: 700;
+      color: var(--gold-bright);
+      line-height: 1.15;
+      text-shadow: 0 0 20px rgba(200,144,74,0.5), 0 2px 4px rgba(0,0,0,0.8);
+      margin-bottom: 10px;
+    }
+    .cover-divider {
+      width: 40px;
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(200,144,74,0.6), transparent);
+      margin: 8px auto;
+    }
+    .cover-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1.1rem, 4vw, 1.5rem);
+      font-style: italic;
+      color: var(--cream);
+      letter-spacing: 0.04em;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+    }
+    .cover-rose-icon {
+      font-size: clamp(1.2rem, 3.5vw, 1.6rem);
+      margin-top: 12px;
+      animation: coverRoseBreath 3s ease-in-out infinite;
+    }
+    @keyframes coverRoseBreath {
+      0%, 100% { transform: scale(1); opacity: 0.8; }
+      50%       { transform: scale(1.08); opacity: 1; }
+    }
+
+    /* open hint */
+    .cover-hint {
+      margin-top: clamp(20px, 5vw, 32px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      opacity: 0;
+      animation: coverHintIn 0.8s ease 1.8s forwards;
+    }
+    @keyframes coverHintIn {
+      to { opacity: 1; }
+    }
+    .hint-tap {
+      font-size: 0.72rem;
+      color: rgba(138,88,112,0.7);
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+    .hint-pulse {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: 1px solid rgba(200,144,74,0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+      animation: hintPulse 2s ease-in-out infinite;
+      color: var(--gold);
+    }
+    @keyframes hintPulse {
+      0%, 100% { transform: scale(1);   box-shadow: 0 0 0 0 rgba(200,144,74,0.3); }
+      50%       { transform: scale(1.06); box-shadow: 0 0 0 10px rgba(200,144,74,0); }
+    }
+
+    /* ═══════════════════════════════════════
+       BOOK / PAGE SCENE
+    ═══════════════════════════════════════ */
+    #scene-book {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.8s ease;
+      padding: 16px;
+    }
+    #scene-book.show {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    /* progress bar at very top */
+    .progress-bar {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: rgba(200,144,74,0.1);
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(to right, var(--rose-dim), var(--gold));
+      transition: width 0.5s ease;
+      border-radius: 0 2px 2px 0;
+    }
+
+    /* page counter */
+    .page-counter {
+      position: absolute;
+      top: 14px;
+      right: 18px;
+      font-size: 0.68rem;
+      color: rgba(138,88,112,0.55);
+      letter-spacing: 0.08em;
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+    }
+
+    /* ── THE BOOK SPREAD ─────────────────── */
+    .book-spread {
+      width: 100%;
+      max-width: min(700px, 95vw);
+      position: relative;
+      perspective: 1200px;
+    }
+
+    /* spine shadow in the middle */
+    .book-spread::before {
+      content: '';
+      position: absolute;
+      top: 4%; bottom: 4%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 4px;
+      background: linear-gradient(to bottom,
+        transparent,
+        rgba(0,0,0,0.5) 20%,
+        rgba(0,0,0,0.7) 50%,
+        rgba(0,0,0,0.5) 80%,
+        transparent
+      );
+      z-index: 5;
+      border-radius: 2px;
+    }
+
+    .page {
+      display: flex;
+      width: 100%;
+      border-radius: 3px 12px 12px 3px;
+      overflow: hidden;
+      box-shadow:
+        -8px 0 24px rgba(0,0,0,0.6),
+        8px 4px 40px rgba(0,0,0,0.5),
+        0 20px 60px rgba(0,0,0,0.4);
+      position: relative;
+      opacity: 0;
+      transform: rotateY(-8deg) scale(0.97);
+      transition:
+        opacity 0.55s cubic-bezier(0.22,1,0.36,1),
+        transform 0.55s cubic-bezier(0.22,1,0.36,1);
+      min-height: clamp(300px, 65vw, 420px);
+    }
+    .page.visible {
+      opacity: 1;
+      transform: rotateY(0deg) scale(1);
+    }
+    /* page turn exit */
+    .page.turning-left {
+      opacity: 0;
+      transform: rotateY(20deg) scale(0.94);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    .page.turning-right {
+      opacity: 0;
+      transform: rotateY(-20deg) scale(0.94);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    /* LEFT PAGE */
+    .page-left {
+      flex: 1;
+      background: linear-gradient(170deg, var(--paper2) 0%, var(--paper) 100%);
+      padding: clamp(20px, 5vw, 36px) clamp(16px, 4vw, 28px) clamp(20px, 5vw, 36px) clamp(20px, 5vw, 36px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* aged paper texture on left */
+    .page-left::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(ellipse 40% 30% at 15% 20%, rgba(180,140,80,0.08) 0%, transparent 100%),
+        radial-gradient(ellipse 30% 20% at 85% 75%, rgba(160,100,60,0.06) 0%, transparent 100%);
+      pointer-events: none;
+    }
+
+    /* large faded reason number */
+    .reason-number {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 300;
+      font-size: clamp(5rem, 18vw, 9rem);
+      color: rgba(192,40,74,0.08);
+      line-height: 0.85;
+      letter-spacing: -0.05em;
+      position: absolute;
+      bottom: clamp(12px, 3vw, 20px);
+      right: clamp(8px, 2vw, 16px);
+      pointer-events: none;
+      user-select: none;
+    }
+
+    /* ink illustration SVG area */
+    .reason-illustration {
+      width: clamp(70px, 22vw, 110px);
+      height: clamp(70px, 22vw, 110px);
+      margin-bottom: clamp(12px, 3vw, 20px);
+      opacity: 0;
+      transform: scale(0.85);
+      transition: opacity 0.8s ease 0.2s, transform 0.8s cubic-bezier(0.34,1.56,0.64,1) 0.2s;
+      position: relative;
+      z-index: 1;
+    }
+    .page.visible .reason-illustration { opacity: 1; transform: scale(1); }
+
+    .reason-illustration svg {
+      width: 100%; height: 100%;
+      overflow: visible;
+    }
+
+    /* ink draw animation — stroke-dashoffset trick */
+    .ink-path {
+      stroke-dasharray: var(--len, 400);
+      stroke-dashoffset: var(--len, 400);
+      transition: stroke-dashoffset 1.4s cubic-bezier(0.4,0,0.2,1) 0.4s;
+    }
+    .page.visible .ink-path { stroke-dashoffset: 0; }
+
+    /* LEFT page label */
+    .left-label {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(0.62rem, 1.8vw, 0.78rem);
+      color: rgba(90,58,32,0.5);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* RIGHT PAGE */
+    .page-right {
+      flex: 1;
+      background: linear-gradient(170deg, var(--paper) 0%, var(--paper2) 100%);
+      padding: clamp(20px, 5vw, 36px) clamp(20px, 5vw, 36px) clamp(20px, 5vw, 36px) clamp(16px, 4vw, 28px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* faint ruled lines */
+    .page-right::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: repeating-linear-gradient(
+        transparent,
+        transparent 27px,
+        rgba(28,14,6,0.05) 27px,
+        rgba(28,14,6,0.05) 28px
+      );
+      background-position: 0 48px;
+      pointer-events: none;
+    }
+
+    /* faint rose ink bleed in corner */
+    .page-right::after {
+      content: '';
+      position: absolute;
+      bottom: -20px; right: -20px;
+      width: 100px; height: 100px;
+      background: radial-gradient(circle, rgba(192,40,74,0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .reason-text-wrap {
+      position: relative;
+      z-index: 1;
+    }
+
+    .reason-label-num {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(0.65rem, 2vw, 0.8rem);
+      color: rgba(192,40,74,0.5);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: clamp(10px, 2.5vw, 16px);
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.6s ease 0.1s, transform 0.6s ease 0.1s;
+    }
+    .page.visible .reason-label-num { opacity: 1; transform: translateY(0); }
+
+    .reason-text {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(1.05rem, 3.8vw, 1.45rem);
+      font-weight: 400;
+      color: var(--ink);
+      line-height: 1.75;
+      letter-spacing: 0.01em;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.9s ease 0.25s, transform 0.9s ease 0.25s;
+    }
+    .page.visible .reason-text { opacity: 1; transform: translateY(0); }
+
+    /* decorative ink drop */
+    .reason-drop {
+      display: inline-block;
+      width: 5px; height: 5px;
+      background: var(--rose);
+      border-radius: 50%;
+      margin-right: 8px;
+      vertical-align: middle;
+      box-shadow: 0 0 6px rgba(192,40,74,0.5);
+      flex-shrink: 0;
+    }
+
+    /* ── NAVIGATION ARROWS ────────────────── */
+    .nav-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: clamp(36px, 9vw, 48px);
+      height: clamp(36px, 9vw, 48px);
+      border-radius: 50%;
+      background: rgba(20,10,30,0.7);
+      border: 1px solid rgba(200,144,74,0.2);
+      color: rgba(200,144,74,0.7);
+      font-size: clamp(1rem, 3vw, 1.3rem);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      z-index: 30;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .nav-btn:hover {
+      background: rgba(192,40,74,0.2);
+      border-color: rgba(200,144,74,0.5);
+      color: var(--gold-bright);
+      transform: translateY(-50%) scale(1.08);
+    }
+    .nav-btn:disabled {
+      opacity: 0.2;
+      cursor: default;
+      transform: translateY(-50%);
+    }
+    #btn-prev { left: clamp(-20px, -5vw, -24px); }
+    #btn-next { right: clamp(-20px, -5vw, -24px); }
+
+    /* swipe hint dots */
+    .page-dots {
+      position: absolute;
+      bottom: -32px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .dot {
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: rgba(138,88,112,0.3);
+      transition: all 0.3s ease;
+    }
+    .dot.active {
+      width: 20px;
+      border-radius: 2px;
+      background: var(--rose);
+    }
+
+    /* ── FINAL PAGE (the mirror) ──────────── */
+    .final-page {
+      width: 100%;
+      max-width: min(700px, 95vw);
+      min-height: clamp(300px, 65vw, 420px);
+      background: linear-gradient(135deg, var(--paper2), var(--paper));
+      border-radius: 3px 12px 12px 3px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(28px, 7vw, 56px);
+      text-align: center;
+      box-shadow:
+        -8px 0 24px rgba(0,0,0,0.6),
+        8px 4px 40px rgba(0,0,0,0.5),
+        0 20px 60px rgba(0,0,0,0.4);
+      position: relative;
+      overflow: hidden;
+      opacity: 0;
+      transform: scale(0.96);
+      transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.22,1,0.36,1);
+    }
+    .final-page.visible { opacity: 1; transform: scale(1); }
+
+    .final-page::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 50%, rgba(192,40,74,0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .final-ornament {
+      font-size: clamp(1.6rem, 5vw, 2.2rem);
+      letter-spacing: 0.3em;
+      margin-bottom: clamp(16px, 4vw, 24px);
+      opacity: 0;
+      transition: opacity 0.8s ease 0.2s;
+    }
+    .final-page.visible .final-ornament { opacity: 1; }
+
+    .final-text-line1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(0.9rem, 3vw, 1.15rem);
+      color: var(--ink-soft);
+      letter-spacing: 0.08em;
+      margin-bottom: clamp(10px, 2.5vw, 16px);
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.8s ease 0.4s, transform 0.8s ease 0.4s;
+    }
+    .final-page.visible .final-text-line1 { opacity: 1; transform: translateY(0); }
+
+    .final-text-main {
+      font-family: 'Dancing Script', cursive;
+      font-size: clamp(1.5rem, 6vw, 2.4rem);
+      font-weight: 700;
+      color: var(--rose);
+      line-height: 1.2;
+      margin-bottom: clamp(14px, 3.5vw, 22px);
+      text-shadow: 0 0 20px rgba(192,40,74,0.3);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 1s ease 0.6s, transform 1s ease 0.6s;
+    }
+    .final-page.visible .final-text-main { opacity: 1; transform: translateY(0); }
+
+    .final-divider {
+      width: 60px; height: 1px;
+      background: linear-gradient(to right, transparent, rgba(192,40,74,0.4), transparent);
+      margin: 0 auto clamp(14px, 3.5vw, 22px);
+      opacity: 0;
+      transition: opacity 0.8s ease 0.8s;
+    }
+    .final-page.visible .final-divider { opacity: 1; }
+
+    .final-sig-label {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(0.75rem, 2.2vw, 0.9rem);
+      color: var(--ink-soft);
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+      opacity: 0;
+      transition: opacity 0.8s ease 0.9s;
+    }
+    .final-page.visible .final-sig-label { opacity: 1; }
+
+    .final-sig-name {
+      font-family: 'Dancing Script', cursive;
+      font-size: clamp(1.6rem, 5.5vw, 2.2rem);
+      font-weight: 700;
+      color: var(--gold);
+      filter: drop-shadow(0 0 12px rgba(200,144,74,0.4));
+      opacity: 0;
+      transition: opacity 1s ease 1s;
+    }
+    .final-page.visible .final-sig-name { opacity: 1; }
+
+    /* gold shimmer on final page */
+    .final-shimmer {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 60% 40% at 50% 50%, rgba(200,144,74,0) 0%, transparent 70%);
+      pointer-events: none;
+      transition: background 1.5s ease;
+    }
+    .final-page.glow .final-shimmer {
+      background: radial-gradient(ellipse 60% 40% at 50% 50%, rgba(200,144,74,0.12) 0%, transparent 70%);
+    }
+
+    /* ═══════════════════════════════════════
+       STAR FIELD FINALE
+    ═══════════════════════════════════════ */
+    #scene-finale {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      background: var(--night);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 24px 40px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1.2s ease;
+      overflow: hidden;
+    }
+    #scene-finale.show {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    #star-canvas {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .finale-inner {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      max-width: 480px;
+    }
+
+    .finale-names {
+      font-family: 'Dancing Script', cursive;
+      font-size: clamp(2rem, 8vw, 3.2rem);
+      font-weight: 700;
+      color: var(--gold-bright);
+      line-height: 1.1;
+      text-shadow: 0 0 30px rgba(200,144,74,0.5), 0 0 60px rgba(200,144,74,0.25);
+      margin-bottom: 16px;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 1s ease 0.5s, transform 1s ease 0.5s;
+    }
+    #scene-finale.show .finale-names { opacity: 1; transform: translateY(0); }
+
+    .finale-forever {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(1rem, 3.5vw, 1.3rem);
+      color: rgba(248,240,227,0.65);
+      letter-spacing: 0.12em;
+      margin-bottom: 48px;
+      opacity: 0;
+      transition: opacity 0.9s ease 1s;
+    }
+    #scene-finale.show .finale-forever { opacity: 1; }
+
+    /* share & expiry in finale */
+    .finale-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      opacity: 0;
+      transition: opacity 0.9s ease 1.4s;
+    }
+    #scene-finale.show .finale-actions { opacity: 1; }
+
+    .finale-share-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .share-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 500;
+      padding: 11px 20px;
+      border-radius: 100px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+      white-space: nowrap;
+    }
+    .share-btn:hover { transform: translateY(-2px); }
+    .btn-wa { background: #25D366; color: #fff; box-shadow: 0 4px 16px rgba(37,211,102,0.3); }
+    .btn-ms { background: #0078FF; color: #fff; box-shadow: 0 4px 16px rgba(0,120,255,0.3); }
+    .btn-cp { background: rgba(248,240,227,0.08); color: var(--cream); border: 1px solid rgba(248,240,227,0.16); }
+
+    .finale-expiry {
+      font-size: 0.7rem;
+      color: rgba(138,88,112,0.5);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .exp-dot {
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: var(--rose);
+      animation: loadBreath 2.4s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+
+    .finale-brand {
+      margin-top: 8px;
+      font-size: 0.68rem;
+      color: rgba(138,88,112,0.35);
+    }
+    .finale-brand a { color: rgba(192,40,74,0.45); text-decoration: none; }
+
+    /* swipe gesture layer */
+    #swipe-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 25;
+      pointer-events: none;
+    }
+    #swipe-layer.active { pointer-events: all; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div id="surface"></div>
+
+<!-- LOADING -->
+<div id="loading">
+  <span class="load-icon">📖</span>
+  <div class="load-text">Opening the book of reasons...</div>
+</div>
+
+<!-- ERROR -->
+<div id="error">
+  <div class="err-icon">📕</div>
+  <div class="err-head">This book has closed</div>
+  <p class="err-body">Every love story deserves to be told again.<br/>This one has expired — but the reasons never will.</p>
+</div>
+
+<!-- COVER SCENE -->
+<div id="scene-cover">
+  <div class="cover-book" onclick="openBook()">
+    <svg class="cover-svg" viewBox="0 0 260 340" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="coverGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%"   stop-color="#2A1008"/>
+          <stop offset="40%"  stop-color="#1E0C06"/>
+          <stop offset="100%" stop-color="#140804"/>
+        </linearGradient>
+        <linearGradient id="spineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%"  stop-color="#100604"/>
+          <stop offset="100%" stop-color="#1E0C06"/>
+        </linearGradient>
+        <filter id="bookShadow">
+          <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="rgba(0,0,0,0.6)"/>
+        </filter>
+      </defs>
+      <!-- spine -->
+      <rect x="0" y="4" width="22" height="332" rx="3" fill="url(#spineGrad)" filter="url(#bookShadow)"/>
+      <!-- cover body -->
+      <rect x="18" y="0" width="240" height="340" rx="4" fill="url(#coverGrad)"/>
+      <!-- cover border inset -->
+      <rect x="26" y="8" width="224" height="324" rx="2" fill="none" stroke="rgba(200,144,74,0.25)" stroke-width="1"/>
+      <rect x="30" y="12" width="216" height="316" rx="1" fill="none" stroke="rgba(200,144,74,0.12)" stroke-width="0.5"/>
+      <!-- corner ornaments -->
+      <path d="M30 12 L44 12 M30 12 L30 26" stroke="rgba(200,144,74,0.5)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <path d="M246 12 L232 12 M246 12 L246 26" stroke="rgba(200,144,74,0.5)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <path d="M30 328 L44 328 M30 328 L30 314" stroke="rgba(200,144,74,0.5)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <path d="M246 328 L232 328 M246 328 L246 314" stroke="rgba(200,144,74,0.5)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <!-- ribbon bookmark -->
+      <rect x="180" y="0" width="8" height="48" fill="rgba(192,40,74,0.7)" rx="1"/>
+      <path d="M180 48 L184 42 L188 48Z" fill="rgba(150,20,50,0.9)"/>
+      <!-- pages peek on right edge -->
+      <rect x="254" y="6" width="4" height="328" rx="1" fill="rgba(248,240,227,0.15)"/>
+      <rect x="252" y="8" width="2" height="324" rx="0.5" fill="rgba(248,240,227,0.08)"/>
+    </svg>
+    <div class="cover-text">
+      <div class="cover-title-small">A book of</div>
+      <div class="cover-title-main">Reasons I<br/>Love You</div>
+      <div class="cover-divider"></div>
+      <div class="cover-name" id="cover-name">—</div>
+      <div class="cover-rose-icon">🌹</div>
+    </div>
+  </div>
+  <div class="cover-hint">
+    <div class="hint-tap">Tap to open</div>
+    <div class="hint-pulse">↑</div>
+  </div>
+</div>
+
+<!-- BOOK SCENE -->
+<div id="scene-book">
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+  <div class="page-counter" id="page-counter">1 of 1</div>
+
+  <div class="book-spread" id="book-spread" style="position:relative;">
+
+    <!-- REASON PAGES (injected by JS) -->
+    <div class="page" id="current-page">
+      <div class="page-left">
+        <div class="reason-illustration" id="illus-left"></div>
+        <div class="left-label" id="left-label">reason</div>
+        <div class="reason-number" id="reason-number">01</div>
+      </div>
+      <div class="page-right">
+        <div class="reason-text-wrap">
+          <div class="reason-label-num" id="reason-label-num">· reason one ·</div>
+          <div class="reason-text" id="reason-text">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FINAL PAGE (hidden until last) -->
+    <div class="final-page" id="final-page" style="display:none;">
+      <div class="final-shimmer"></div>
+      <div class="final-ornament">· · · · ·</div>
+      <div class="final-text-line1">And that is why</div>
+      <div class="final-text-main" id="final-text-main">you are everything.</div>
+      <div class="final-divider"></div>
+      <div class="final-sig-label">written with all my love,</div>
+      <div class="final-sig-name" id="final-sig-name">—</div>
+    </div>
+
+    <button class="nav-btn" id="btn-prev" onclick="prevPage()" aria-label="Previous">‹</button>
+    <button class="nav-btn" id="btn-next" onclick="nextPage()" aria-label="Next">›</button>
+
+    <div class="page-dots" id="page-dots"></div>
+  </div>
+</div>
+
+<!-- FINALE SCENE -->
+<div id="scene-finale">
+  <canvas id="star-canvas"></canvas>
+  <div class="finale-inner">
+    <div class="finale-names" id="finale-names">Forever yours</div>
+    <div class="finale-forever">written in the stars &amp; sealed with love</div>
+    <div class="finale-actions">
+      <div class="finale-share-row">
+        <a class="share-btn btn-wa" id="btn-wa" href="#" target="_blank">📱 Share via WhatsApp</a>
+        <a class="share-btn btn-ms" id="btn-ms" href="#" target="_blank">💬 Messenger</a>
+        <button class="share-btn btn-cp" id="btn-cp" onclick="copyLink()">📋 Copy link</button>
+      </div>
+      <div class="finale-expiry">
+        <div class="exp-dot"></div>
+        <span id="expiry-text">This gift expires in 24 hours</span>
+      </div>
+      <div class="finale-brand">
+        Created with <a href="https://loversgift.io">LoversGift</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- swipe layer -->
+<div id="swipe-layer"></div>
+
+<script>
+  // ─── CONFIG ───────────────────────────────────────────────────
+  const API_BASE = 'https://your-app.railway.app'; // ← YOUR RAILWAY URL
+
+  // ─── STATE ────────────────────────────────────────────────────
+  let giftData  = null;
+  let reasons   = [];
+  let current   = 0;       // 0..reasons.length-1 = reason pages; reasons.length = final
+  let turning   = false;
+
+  // ─── ILLUSTRATIONS — unique SVG per reason index (cycles) ─────
+  // Each is a minimal ink-sketch SVG that animates via stroke-dashoffset
+  const ILLUSTRATIONS = [
+    // 0 — heart
+    `<svg viewBox="0 0 80 80"><path class="ink-path" d="M40 62 C20 46 10 36 10 24 C10 14 18 8 28 8 C34 8 38 12 40 16 C42 12 46 8 52 8 C62 8 70 14 70 24 C70 36 60 46 40 62Z" fill="none" stroke="rgba(192,40,74,0.7)" stroke-width="2" stroke-linecap="round" style="--len:220;" /><circle cx="40" cy="36" r="2" fill="rgba(192,40,74,0.5)"/></svg>`,
+    // 1 — stars
+    `<svg viewBox="0 0 80 80"><path class="ink-path" d="M40 8 L44 28 L64 28 L48 40 L54 60 L40 48 L26 60 L32 40 L16 28 L36 28 Z" fill="none" stroke="rgba(200,144,74,0.75)" stroke-width="1.8" stroke-linecap="round" style="--len:280;"/><circle cx="22" cy="18" r="1.5" fill="rgba(200,144,74,0.4)"/><circle cx="60" cy="14" r="1" fill="rgba(200,144,74,0.3)"/><circle cx="65" cy="52" r="1.5" fill="rgba(200,144,74,0.35)"/></svg>`,
+    // 2 — wave / ocean
+    `<svg viewBox="0 0 80 80"><path class="ink-path" d="M8 30 Q20 18 32 30 Q44 42 56 30 Q68 18 76 30" fill="none" stroke="rgba(60,120,200,0.65)" stroke-width="2" stroke-linecap="round" style="--len:180;"/><path class="ink-path" d="M8 46 Q20 34 32 46 Q44 58 56 46 Q68 34 76 46" fill="none" stroke="rgba(60,120,200,0.45)" stroke-width="1.5" stroke-linecap="round" style="--len:180;" class="ink-path"/></svg>`,
+    // 3 — flame / fire
+    `<svg viewBox="0 0 80 80"><path class="ink-path" d="M40 72 C28 68 18 58 18 44 C18 36 22 30 28 24 C28 34 34 38 40 32 C40 44 46 48 50 40 C56 50 58 60 50 68 C46 70 43 72 40 72Z" fill="none" stroke="rgba(220,100,40,0.7)" stroke-width="2" stroke-linecap="round" style="--len:260;"/></svg>`,
+    // 4 — compass
+    `<svg viewBox="0 0 80 80"><circle class="ink-path" cx="40" cy="40" r="28" fill="none" stroke="rgba(138,88,112,0.6)" stroke-width="1.5" style="--len:176;"/><path class="ink-path" d="M40 16 L40 24 M40 56 L40 64 M16 40 L24 40 M56 40 L64 40" stroke="rgba(138,88,112,0.5)" stroke-width="1.2" stroke-linecap="round" style="--len:64;"/><path class="ink-path" d="M40 28 L44 40 L40 52 L36 40 Z" fill="none" stroke="rgba(192,40,74,0.7)" stroke-width="1.5" stroke-linecap="round" style="--len:80;"/></svg>`,
+    // 5 — moon & stars
+    `<svg viewBox="0 0 80 80"><path class="ink-path" d="M50 20 C50 38 36 52 18 52 C24 64 36 72 50 72 C66 72 78 60 78 44 C78 30 66 18 50 18 L50 20Z" fill="none" stroke="rgba(180,160,220,0.7)" stroke-width="1.8" stroke-linecap="round" style="--len:200;"/><circle cx="24" cy="22" r="2" fill="rgba(200,144,74,0.5)"/><circle cx="14" cy="34" r="1.5" fill="rgba(200,144,74,0.4)"/><circle cx="30" cy="12" r="1" fill="rgba(200,144,74,0.35)"/></svg>`,
+    // 6 — infinity
+    `<svg viewBox="0 0 80 80"><path class="ink-path" d="M20 40 C20 28 28 20 40 20 C52 20 60 28 60 40 C60 52 68 60 52 60 C44 60 36 52 36 40 C36 28 28 20 20 20 C10 20 8 28 8 40 C8 52 16 60 28 60 C36 60 44 52 44 40" fill="none" stroke="rgba(192,40,74,0.65)" stroke-width="2" stroke-linecap="round" style="--len:320;"/></svg>`,
+    // 7 — key
+    `<svg viewBox="0 0 80 80"><circle class="ink-path" cx="28" cy="32" r="16" fill="none" stroke="rgba(200,144,74,0.7)" stroke-width="2" style="--len:100;"/><path class="ink-path" d="M40 40 L72 72 M60 60 L66 54 M68 68 L74 62" fill="none" stroke="rgba(200,144,74,0.65)" stroke-width="2" stroke-linecap="round" style="--len:80;"/></svg>`,
+    // 8 — heartbeat
+    `<svg viewBox="0 0 80 80"><path class="ink-path" d="M8 40 L20 40 L26 22 L34 58 L42 32 L48 48 L54 40 L72 40" fill="none" stroke="rgba(192,40,74,0.75)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="--len:240;"/></svg>`,
+    // 9 — feather / quill
+    `<svg viewBox="0 0 80 80"><path class="ink-path" d="M20 64 Q30 40 60 12 C62 30 52 44 38 52 L32 70 Z" fill="none" stroke="rgba(138,88,112,0.65)" stroke-width="1.8" stroke-linecap="round" style="--len:220;"/><path class="ink-path" d="M36 52 L22 62" stroke="rgba(138,88,112,0.5)" stroke-width="1.2" stroke-linecap="round" style="--len:40;"/></svg>`,
+  ];
+
+  function getIllustration(i) {
+    return ILLUSTRATIONS[i % ILLUSTRATIONS.length];
+  }
+
+  // ordinal helper
+  const ORDINALS = ['one','two','three','four','five','six','seven','eight','nine','ten',
+    'eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen',
+    'nineteen','twenty','twenty-one','twenty-two','twenty-three','twenty-four','twenty-five',
+    'twenty-six','twenty-seven','twenty-eight','twenty-nine','thirty'];
+
+  // ─── RENDER PAGE ──────────────────────────────────────────────
+  function renderPage(index, direction) {
+    const page = document.getElementById('current-page');
+    const finalPage = document.getElementById('final-page');
+    const isLast = index >= reasons.length;
+
+    // exit animation
+    if (direction !== 'init') {
+      page.classList.add(direction === 'next' ? 'turning-left' : 'turning-right');
+      finalPage.style.display = 'none';
+    }
+
+    setTimeout(() => {
+      page.classList.remove('turning-left','turning-right','visible');
+      finalPage.classList.remove('visible');
+
+      if (isLast) {
+        // Final page
+        page.style.display = 'none';
+        finalPage.style.display = 'flex';
+        document.getElementById('final-sig-name').textContent = giftData.senderName || '—';
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            finalPage.classList.add('visible');
+            setTimeout(() => {
+              finalPage.classList.add('glow');
+              setTimeout(showFinale, 2800);
+            }, 1400);
+          });
+        });
+      } else {
+        page.style.display = 'flex';
+        finalPage.style.display = 'none';
+        // fill content
+        const reason = reasons[index];
+        const num    = String(index + 1).padStart(2, '0');
+        document.getElementById('reason-number').textContent = num;
+        document.getElementById('reason-label-num').textContent = `· reason ${ORDINALS[index] || num} ·`;
+        document.getElementById('reason-text').textContent = reason;
+        document.getElementById('illus-left').innerHTML = getIllustration(index);
+        document.getElementById('left-label').textContent = 'reason';
+
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            page.classList.add('visible');
+          });
+        });
+      }
+
+      // update progress + counter + dots
+      updateNav(index, isLast);
+    }, direction === 'init' ? 0 : 280);
+  }
+
+  function updateNav(index, isLast) {
+    const total = reasons.length + 1; // +1 for final page
+    const cur   = isLast ? reasons.length : index;
+    const pct   = ((cur + 1) / total) * 100;
+    document.getElementById('progress-fill').style.width = `${pct}%`;
+    document.getElementById('page-counter').textContent  = `${cur + 1} of ${total}`;
+
+    document.getElementById('btn-prev').disabled = (index === 0 && !isLast);
+    document.getElementById('btn-next').style.display = isLast ? 'none' : '';
+
+    // dots (show max 7 then truncate)
+    const dots = document.getElementById('page-dots');
+    const MAX_DOTS = 7;
+    const showDots = Math.min(total, MAX_DOTS);
+    dots.innerHTML = '';
+    for (let i = 0; i < showDots; i++) {
+      const d = document.createElement('div');
+      d.className = 'dot' + (i === Math.min(cur, MAX_DOTS - 1) ? ' active' : '');
+      dots.appendChild(d);
+    }
+  }
+
+  function nextPage() {
+    if (turning) return;
+    const max = reasons.length; // final page is index `reasons.length`
+    if (current >= max) return;
+    turning = true;
+    current++;
+    renderPage(current, 'next');
+    setTimeout(() => turning = false, 600);
+  }
+
+  function prevPage() {
+    if (turning || current === 0) return;
+    turning = true;
+    current--;
+    renderPage(current, 'prev');
+    setTimeout(() => turning = false, 600);
+  }
+
+  // ─── SWIPE SUPPORT ────────────────────────────────────────────
+  let touchStartX = 0;
+  const swipeLayer = document.getElementById('swipe-layer');
+
+  swipeLayer.addEventListener('touchstart', e => {
+    touchStartX = e.touches[0].clientX;
+  }, { passive: true });
+
+  swipeLayer.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 40) {
+      dx < 0 ? nextPage() : prevPage();
+    }
+  }, { passive: true });
+
+  // keyboard arrows
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') nextPage();
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   prevPage();
+  });
+
+  // ─── COVER → BOOK ────────────────────────────────────────────
+  function openBook() {
+    const cover = document.getElementById('scene-cover');
+    cover.classList.add('out');
+    setTimeout(() => {
+      cover.style.display = 'none';
+      const book = document.getElementById('scene-book');
+      book.classList.add('show');
+      document.getElementById('swipe-layer').classList.add('active');
+      // render first page
+      renderPage(0, 'init');
+    }, 700);
+  }
+
+  // ─── STAR CANVAS ──────────────────────────────────────────────
+  let stars = [], rafId;
+
+  function initStars() {
+    const canvas = document.getElementById('star-canvas');
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const ctx = canvas.getContext('2d');
+    stars = [];
+    const N = 180;
+    for (let i = 0; i < N; i++) {
+      stars.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: 0.4 + Math.random() * 1.8,
+        alpha: Math.random(),
+        speed: 0.003 + Math.random() * 0.006,
+        phase: Math.random() * Math.PI * 2,
+      });
+    }
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const t = Date.now() * 0.001;
+      for (const s of stars) {
+        const a = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(t * s.speed * 10 + s.phase));
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(248,240,227,${(a * 0.8).toFixed(2)})`;
+        ctx.fill();
+      }
+      // a few gold stars
+      for (let i = 0; i < 12; i++) {
+        const s = stars[i];
+        const a = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(t * 0.04 + s.phase));
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r * 1.6, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(200,144,74,${(a * 0.9).toFixed(2)})`;
+        ctx.fill();
+      }
+      rafId = requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  // ─── FINALE ───────────────────────────────────────────────────
+  function showFinale() {
+    initStars();
+    const fn = document.getElementById('scene-finale');
+    // set names
+    const names = giftData.senderName && giftData.receiverName
+      ? `${giftData.senderName} & ${giftData.receiverName}`
+      : giftData.receiverName || 'You are everything';
+    document.getElementById('finale-names').textContent = names;
+
+    // share links
+    const url    = giftData.shareUrl || window.location.href;
+    const waMsg  = encodeURIComponent(`🌹 I made you a "Reasons I Love You" book → ${url}`);
+    document.getElementById('btn-wa').href = `https://wa.me/?text=${waMsg}`;
+    document.getElementById('btn-ms').href = `fb-messenger://share/?link=${encodeURIComponent(url)}`;
+
+    setExpiryText(giftData.expiresAt);
+
+    fn.classList.add('show');
+  }
+
+  // ─── EXPIRY ───────────────────────────────────────────────────
+  function setExpiryText(expiresAt) {
+    const el = document.getElementById('expiry-text');
+    if (!expiresAt || !el) return;
+    function update() {
+      const ms = new Date(expiresAt) - Date.now();
+      if (ms <= 0) { el.textContent = 'This gift has expired'; return; }
+      const h = Math.floor(ms / 3600000);
+      const m = Math.floor((ms % 3600000) / 60000);
+      el.textContent = h > 0
+        ? `This gift expires in ${h}h ${m}m`
+        : `This gift expires in ${m}m`;
+    }
+    update();
+    setInterval(update, 60000);
+  }
+
+  // ─── COPY LINK ────────────────────────────────────────────────
+  function copyLink() {
+    const link = giftData?.shareUrl || window.location.href;
+    navigator.clipboard.writeText(link).then(() => {
+      const btn = document.getElementById('btn-cp');
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copied!';
+      btn.style.background = 'rgba(76,175,80,0.15)';
+      btn.style.color = '#81c784';
+      setTimeout(() => { btn.textContent = orig; btn.style.background = ''; btn.style.color = ''; }, 2500);
+    });
+  }
+
+  // ─── DUST MOTES ───────────────────────────────────────────────
+  (function() {
+    for (let i = 0; i < 18; i++) {
+      const m = document.createElement('div');
+      m.className = 'mote';
+      const size = 1 + Math.random() * 2.5;
+      const dur  = 22 + Math.random() * 20;
+      m.style.cssText = `
+        left:${Math.random()*100}%;width:${size}px;height:${size}px;
+        background:${Math.random()>0.5?'rgba(200,144,74,0.6)':'rgba(192,40,74,0.5)'};
+        --op:${0.04+Math.random()*0.12};--dx:${(Math.random()-0.5)*60}px;
+        animation-duration:${dur}s;animation-delay:${Math.random()*-dur}s;
+      `;
+      document.getElementById('surface').appendChild(m);
+    }
+  })();
+
+  // ─── DEMO DATA ────────────────────────────────────────────────
+  const DEMO_GIFT = {
+    receiverName: 'Sofia',
+    senderName:   'Marco',
+    message: [
+      'The way your eyes catch light in the morning, before you even know anyone is watching.',
+      'How you laugh with your whole body when something genuinely surprises you.',
+      'The fact that you remember the small things — the details no one else notices.',
+      'The way you make every room feel warmer just by being in it.',
+      'Your courage. The quiet, steady kind that doesn\'t announce itself.',
+      'How you love the people in your life so completely and without condition.',
+      'The sound of your voice when you\'re excited about something you just discovered.',
+      'That you never make me feel like too much — you make me feel exactly right.'
+    ].join('\n'),
+    specialDate: null,
+    theme: 'rose',
+    expiresAt: new Date(Date.now() + 23 * 3600 * 1000).toISOString(),
+    shareUrl: window.location.href,
+  };
+
+  // ─── PARSE REASONS ────────────────────────────────────────────
+  // Reasons are stored newline-separated in the message field
+  function parseReasons(message) {
+    if (!message) return ['You are everything to me.'];
+    const lines = message
+      .split('\n')
+      .map(l => l.trim())
+      .filter(l => l.length > 0);
+    return lines.length > 0 ? lines : [message.trim()];
+  }
+
+  // ─── LOAD GIFT ────────────────────────────────────────────────
+  async function loadGift() {
+    let code = '';
+    const parts = window.location.pathname.split('/');
+    const gIdx  = parts.indexOf('g');
+    if (gIdx !== -1 && parts[gIdx + 1]) code = parts[gIdx + 1];
+    else code = new URLSearchParams(window.location.search).get('code') || '';
+
+    const useDemo = window.location.search.includes('demo');
+
+    if (!code && !useDemo) {
+      document.getElementById('loading').classList.add('gone');
+      document.getElementById('error').classList.add('show');
+      return;
+    }
+
+    try {
+      if (!useDemo) {
+        const resp = await fetch(`${API_BASE}/api/gifts/${code}/view`);
+        const data = await resp.json();
+        if (!resp.ok || data.expired || data.error) {
+          document.getElementById('loading').classList.add('gone');
+          document.getElementById('error').classList.add('show');
+          return;
+        }
+        giftData = data.gift;
+      } else {
+        giftData = DEMO_GIFT;
+      }
+
+      reasons = parseReasons(giftData.message);
+
+      // set cover name
+      document.getElementById('cover-name').textContent =
+        giftData.receiverName || 'You';
+
+      // fade out loading
+      const loadEl = document.getElementById('loading');
+      loadEl.classList.add('out');
+      setTimeout(() => {
+        loadEl.classList.add('gone');
+        document.getElementById('scene-cover').classList.add('show');
+      }, 1000);
+
+    } catch {
+      if (useDemo) {
+        giftData = DEMO_GIFT;
+        reasons  = parseReasons(giftData.message);
+        document.getElementById('cover-name').textContent = giftData.receiverName || 'You';
+        const loadEl = document.getElementById('loading');
+        loadEl.classList.add('out');
+        setTimeout(() => {
+          loadEl.classList.add('gone');
+          document.getElementById('scene-cover').classList.add('show');
+        }, 1000);
+      } else {
+        document.getElementById('loading').classList.add('gone');
+        document.getElementById('error').classList.add('show');
+      }
+    }
+  }
+
+  window.addEventListener('resize', () => {
+    const canvas = document.getElementById('star-canvas');
+    if (canvas) { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+  });
+
+  loadGift();
+</script>
+</body>
+</html>
