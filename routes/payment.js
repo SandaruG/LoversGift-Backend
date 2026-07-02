@@ -53,14 +53,32 @@ function resolvePaymentMethod(preferredMethod) {
     return requested;
   }
 
+  const whopApiKey = process.env.WHOP_API_KEY || process.env.WHOP_KEY || process.env.WHOP_APIKEY;
+  const whopCompanyId = process.env.WHOP_COMPANY_ID || process.env.WHOP_COMPANY || process.env.WHOP_COMPANYID;
+  const paypalClientId = process.env.PAYPAL_CLIENT_ID || process.env.PAYPAL_ID || process.env.PAYPAL_CLIENT;
+  const paypalClientSecret = process.env.PAYPAL_CLIENT_SECRET || process.env.PAYPAL_SECRET || process.env.PAYPAL_SECRET_KEY;
+
+  const whopEnabled = Boolean(whopApiKey && whopCompanyId);
+  const paypalEnabled = Boolean(paypalClientId && paypalClientSecret);
+
+  if (paypalEnabled && !whopEnabled) return 'paypal';
+  if (whopEnabled && !paypalEnabled) return 'whop';
+  if (!paypalEnabled && !whopEnabled) return 'whop';
+
   const whopRevenueUsd = parseFloat(process.env.WHOP_REVENUE_USD || '0');
   const thresholdUsd = parseFloat(process.env.PAYPAL_FALLBACK_THRESHOLD_USD || '200');
   return whopRevenueUsd >= thresholdUsd ? 'paypal' : 'whop';
 }
 
 function getPaymentConfig() {
-  const whopEnabled = Boolean(process.env.WHOP_API_KEY && process.env.WHOP_COMPANY_ID && process.env.WHOP_WEBHOOK_SECRET);
-  const paypalEnabled = Boolean(process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET);
+  const whopApiKey = process.env.WHOP_API_KEY || process.env.WHOP_KEY || process.env.WHOP_APIKEY;
+  const whopCompanyId = process.env.WHOP_COMPANY_ID || process.env.WHOP_COMPANY || process.env.WHOP_COMPANYID;
+  const whopWebhookSecret = process.env.WHOP_WEBHOOK_SECRET || process.env.WHOP_SECRET || process.env.WHOP_WEBHOOK;
+  const paypalClientId = process.env.PAYPAL_CLIENT_ID || process.env.PAYPAL_ID || process.env.PAYPAL_CLIENT;
+  const paypalClientSecret = process.env.PAYPAL_CLIENT_SECRET || process.env.PAYPAL_SECRET || process.env.PAYPAL_SECRET_KEY;
+
+  const whopEnabled = Boolean(whopApiKey && whopCompanyId && whopWebhookSecret);
+  const paypalEnabled = Boolean(paypalClientId && paypalClientSecret);
   return {
     whopEnabled,
     paypalEnabled,
@@ -105,11 +123,11 @@ function getPayPalRedirectUrls(baseUrl) {
 }
 
 async function getPayPalToken() {
-  const clientId = process.env.PAYPAL_CLIENT_ID;
-  const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
+  const clientId = process.env.PAYPAL_CLIENT_ID || process.env.PAYPAL_ID || process.env.PAYPAL_CLIENT;
+  const clientSecret = process.env.PAYPAL_CLIENT_SECRET || process.env.PAYPAL_SECRET || process.env.PAYPAL_SECRET_KEY;
 
   if (!clientId || !clientSecret) {
-    throw new Error('PayPal credentials not configured in .env');
+    throw new Error('PayPal credentials not configured in environment variables');
   }
 
   const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
@@ -191,11 +209,11 @@ async function capturePayPalOrder(paypalOrderId) {
 }
 
 async function createWhopCheckoutSession(orderRef, product, amountCents, metadata) {
-  const apiKey = process.env.WHOP_API_KEY;
-  const companyId = process.env.WHOP_COMPANY_ID;
+  const apiKey = process.env.WHOP_API_KEY || process.env.WHOP_KEY || process.env.WHOP_APIKEY;
+  const companyId = process.env.WHOP_COMPANY_ID || process.env.WHOP_COMPANY || process.env.WHOP_COMPANYID;
 
   if (!apiKey || !companyId) {
-    throw new Error('Whop credentials not configured in .env');
+    throw new Error('Whop credentials not configured in environment variables');
   }
 
   const amount = (amountCents / 100).toFixed(2);
@@ -242,12 +260,20 @@ function activateGift(db, order) {
   const expiresAt = new Date(Date.now() + expiryHrs * 60 * 60 * 1000).toISOString();
   const baseUrl   = normalizeBaseUrl(process.env.BASE_URL || process.env.FRONTEND_URL);
 
+  let parsedExtraData = {};
+  try {
+    parsedExtraData = order.extra_data ? JSON.parse(order.extra_data) : {};
+  } catch (_err) {
+    parsedExtraData = {};
+  }
+  const photoPath = parsedExtraData.photo_path || null;
+
   // Insert the gift row
   db.prepare(`
     INSERT INTO gifts
       (code, product_id, order_id, sender_name, receiver_name,
-       message, special_date, theme, extra_data, expires_at, paid)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+       message, special_date, theme, extra_data, photo_path, expires_at, paid)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
   `).run(
     code,
     order.product_id,
@@ -257,7 +283,8 @@ function activateGift(db, order) {
     order.message,
     order.special_date,
     order.theme,
-    order.extra_data || '{}',
+    JSON.stringify(parsedExtraData || {}),
+    photoPath,
     expiresAt
   );
 
