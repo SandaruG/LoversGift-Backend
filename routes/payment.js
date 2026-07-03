@@ -397,7 +397,7 @@ router.post('/create-order', upload.single('photo'), async (req, res) => {
       message: message.trim(),
     });
 
-    db.prepare('UPDATE orders SET provider_order_id = ? WHERE order_ref = ?').run(checkout.id || checkout.purchase_url || orderRef, orderRef);
+    db.prepare('UPDATE orders SET provider_order_id = ? WHERE order_ref = ?').run(checkout.id || checkout.purchase_url || checkout.redirect_url || orderRef, orderRef);
 
     res.json({
       orderRef,
@@ -455,33 +455,6 @@ router.post('/capture', async (req, res) => {
 
 router.get('/config', (_req, res) => {
   res.json(getPaymentConfig());
-});
-
-router.get('/status/:orderRef', (req, res) => {
-  try {
-    const db = getDb();
-    const order = db.prepare('SELECT * FROM orders WHERE order_ref = ?').get(req.params.orderRef);
-    if (!order) return res.status(404).json({ error: 'Order not found' });
-
-    if (order.status !== 'paid') {
-      return res.json({ status: 'pending', orderRef: order.order_ref });
-    }
-
-    const gift = db.prepare('SELECT * FROM gifts WHERE code = ?').get(order.gift_code);
-    const product = db.prepare('SELECT * FROM products WHERE id = ?').get(order.product_id);
-    return res.json({
-      status: 'paid',
-      orderRef: order.order_ref,
-      shareUrl: gift ? `${normalizeBaseUrl(process.env.BASE_URL || process.env.FRONTEND_URL)}/g/${gift.code}` : null,
-      whatsappUrl: gift ? `https://wa.me/?text=${encodeURIComponent(`💌 I made you something special → ${normalizeBaseUrl(process.env.BASE_URL || process.env.FRONTEND_URL)}/g/${gift.code}`)}` : null,
-      messengerUrl: gift ? `fb-messenger://share/?link=${encodeURIComponent(`${normalizeBaseUrl(process.env.BASE_URL || process.env.FRONTEND_URL)}/g/${gift.code}`)}` : null,
-      expiresAt: gift?.expires_at || null,
-      product: product ? { title: product.title, emoji: product.emoji } : null,
-    });
-  } catch (err) {
-    console.error('❌ status error:', err.message);
-    return res.status(500).json({ error: 'Status lookup failed.' });
-  }
 });
 
 router.get('/paypal/return', async (req, res) => {
@@ -542,11 +515,30 @@ router.post('/whop/webhook', express.json({ type: 'application/json' }), (req, r
     }
 
     const orderRef = payload?.data?.metadata?.order_ref || payload?.metadata?.order_ref || payload?.data?.plan?.metadata?.order_ref || payload?.data?.product?.metadata?.order_ref;
-    if (!orderRef) {
-      return res.status(400).json({ error: 'Missing order reference in webhook payload' });
+    let order = null;
+    if (orderRef) {
+      order = db.prepare('SELECT * FROM orders WHERE order_ref = ?').get(orderRef);
     }
 
-    const order = db.prepare('SELECT * FROM orders WHERE order_ref = ?').get(orderRef);
+    const fallbackProviderIds = [
+      payload?.data?.id,
+      payload?.data?.checkout_id,
+      payload?.data?.payment_id,
+      payload?.data?.purchase_id,
+      payload?.data?.order_id,
+      payload?.data?.plan?.id,
+      payload?.data?.product?.id,
+      payload?.data?.product?.external_identifier,
+    ].filter(Boolean);
+
+    if (!order && fallbackProviderIds.length) {
+      const query = db.prepare('SELECT * FROM orders WHERE provider_order_id = ? OR provider_order_id LIKE ?');
+      for (const providerId of fallbackProviderIds) {
+        order = query.get(providerId, `%${providerId}%`);
+        if (order) break;
+      }
+    }
+
     if (!order) return res.status(404).json({ error: 'Order not found' });
     if (order.status === 'paid') {
       return res.json({ received: true, already_processed: true });
