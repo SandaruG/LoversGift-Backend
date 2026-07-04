@@ -47,6 +47,17 @@ function normalizeBaseUrl(url) {
   return baseUrl.replace(/\/+$/, '');
 }
 
+function getPaypalMode() {
+  const mode = (process.env.PAYPAL_ENV || process.env.PAYPAL_MODE || 'live').trim().toLowerCase();
+  if (!mode) {
+    return 'live';
+  }
+  if (mode !== 'live' && mode !== 'sandbox') {
+    throw new Error('PAYPAL_ENV or PAYPAL_MODE must be either "live" or "sandbox"');
+  }
+  return mode;
+}
+
 function resolvePaymentMethod(preferredMethod) {
   const requested = (preferredMethod || '').toLowerCase();
   if (requested === 'paypal' || requested === 'whop') {
@@ -56,11 +67,12 @@ function resolvePaymentMethod(preferredMethod) {
   const whopApiKey = process.env.WHOP_API_KEY;
   const whopCompanyId = process.env.WHOP_COMPANY_ID;
   const whopWebhookSecret = process.env.WHOP_WEBHOOK_SECRET;
+  const whopPlanId = process.env.WHOP_PLAN_ID;
   const paypalClientId = process.env.PAYPAL_CLIENT_ID;
   const paypalClientSecret = process.env.PAYPAL_CLIENT_SECRET;
 
-  const whopEnabled = Boolean(whopApiKey && whopCompanyId && whopWebhookSecret);
-  const paypalEnabled = Boolean(paypalClientId && paypalClientSecret);
+  const whopEnabled = Boolean(whopApiKey && whopCompanyId && whopWebhookSecret && whopPlanId);
+  const paypalEnabled = Boolean(paypalClientId && paypalClientSecret && getPaypalMode());
 
   if (paypalEnabled && !whopEnabled) return 'paypal';
   if (whopEnabled && !paypalEnabled) return 'whop';
@@ -73,11 +85,12 @@ function getPaymentConfig() {
   const whopApiKey = process.env.WHOP_API_KEY;
   const whopCompanyId = process.env.WHOP_COMPANY_ID;
   const whopWebhookSecret = process.env.WHOP_WEBHOOK_SECRET;
+  const whopPlanId = process.env.WHOP_PLAN_ID;
   const paypalClientId = process.env.PAYPAL_CLIENT_ID;
   const paypalClientSecret = process.env.PAYPAL_CLIENT_SECRET;
-  const paypalMode = process.env.PAYPAL_MODE;
+  const paypalMode = getPaypalMode();
 
-  const whopEnabled = Boolean(whopApiKey && whopCompanyId && whopWebhookSecret);
+  const whopEnabled = Boolean(whopApiKey && whopCompanyId && whopWebhookSecret && whopPlanId);
   const paypalEnabled = Boolean(paypalClientId && paypalClientSecret && paypalMode);
 
   return {
@@ -110,16 +123,17 @@ function verifyWhopSignature(payload, signatureHeader, timestampHeader, secret) 
 }
 
 function paypalBase() {
-  const mode = (process.env.PAYPAL_MODE || '').trim().toLowerCase();
-  if (!mode) {
-    throw new Error('PAYPAL_MODE must be set to "live" or "sandbox"');
-  }
-  if (mode !== 'live' && mode !== 'sandbox') {
-    throw new Error('PAYPAL_MODE must be either "live" or "sandbox"');
-  }
-  return mode === 'live'
+  return getPaypalMode() === 'live'
     ? 'https://api-m.paypal.com'
     : 'https://api-m.sandbox.paypal.com';
+}
+
+function getPayPalRedirectUrls(baseUrl) {
+  const normalizedBaseUrl = normalizeBaseUrl(baseUrl || process.env.BASE_URL || process.env.FRONTEND_URL);
+  return {
+    returnUrl: `${normalizedBaseUrl}/api/payment/paypal/return`,
+    cancelUrl: `${normalizedBaseUrl}/api/payment/paypal/cancel`,
+  };
 }
 
 async function getPayPalToken() {
@@ -199,46 +213,75 @@ async function capturePayPalOrder(paypalOrderId) {
 async function createWhopCheckoutSession(orderRef, product, amountCents, metadata) {
   const apiKey = process.env.WHOP_API_KEY;
   const companyId = process.env.WHOP_COMPANY_ID;
+  const planId = process.env.WHOP_PLAN_ID;
 
-  if (!apiKey || !companyId) {
+  if (!apiKey || !companyId || !planId) {
     throw new Error('Whop credentials not configured in environment variables');
   }
 
   const amount = (amountCents / 100).toFixed(2);
-  const response = await axios.post(
-    `${process.env.WHOP_API_BASE_URL || 'https://api.whop.com/v2'}/checkout_configurations`,
+  const successUrl = `${normalizeBaseUrl(process.env.BASE_URL || process.env.FRONTEND_URL)}/payment-success`;
+  const apiBaseUrl = process.env.WHOP_API_BASE_URL || 'https://api.whop.com/v2';
+  const commonHeaders = {
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+  };
+
+  const attempts = [
     {
-      mode: 'payment',
-      plan: {
-        company_id: companyId,
-        currency: 'usd',
-        initial_price: parseFloat(amount),
-        renewal_price: 0,
-        plan_type: 'one_time',
-        release_method: 'buy_now',
-        title: `LoversGift – ${product.title}`,
-        visibility: 'hidden',
-        product: {
-          external_identifier: orderRef,
-          title: `LoversGift – ${product.title}`,
-          visibility: 'hidden',
+      endpoint: `${apiBaseUrl}/checkout_sessions`,
+      body: {
+        plan_id: planId,
+        redirect_url: successUrl,
+        metadata: {
+          order_ref: orderRef,
+          ...metadata,
         },
       },
-      metadata: {
-        order_ref: orderRef,
-        ...metadata,
-      },
-      redirect_url: `${normalizeBaseUrl(process.env.BASE_URL || process.env.FRONTEND_URL)}/payment-success`,
     },
     {
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
+      endpoint: `${apiBaseUrl}/checkout_configurations`,
+      body: {
+        mode: 'payment',
+        plan_id: planId,
+        plan: {
+          company_id: companyId,
+          currency: 'usd',
+          initial_price: parseFloat(amount),
+          renewal_price: 0,
+          plan_type: 'one_time',
+          release_method: 'buy_now',
+          title: `LoversGift – ${product.title}`,
+          visibility: 'hidden',
+          product: {
+            external_identifier: orderRef,
+            title: `LoversGift – ${product.title}`,
+            visibility: 'hidden',
+          },
+        },
+        metadata: {
+          order_ref: orderRef,
+          ...metadata,
+        },
+        redirect_url: successUrl,
       },
-    }
-  );
+    },
+  ];
 
-  return response.data;
+  let lastError;
+  for (const attempt of attempts) {
+    try {
+      const response = await axios.post(attempt.endpoint, attempt.body, commonHeaders);
+      return response.data;
+    } catch (err) {
+      lastError = err;
+      console.warn(`⚠️ Whop checkout attempt failed for ${attempt.endpoint}:`, err.response?.data || err.message);
+    }
+  }
+
+  throw lastError || new Error('Whop checkout creation failed');
 }
 
 // ── Helper: create the gift after payment confirmed ─────────────
@@ -376,12 +419,31 @@ router.post('/create-order', upload.single('photo'), async (req, res) => {
       });
     }
 
-    const checkout = await createWhopCheckoutSession(orderRef, product, product.price_cents, {
-      sender_name: senderName.trim(),
-      receiver_name: receiverName.trim(),
-      message: message.trim(),
-      product_slug: product.slug || null,
-    });
+    let checkout;
+    try {
+      checkout = await createWhopCheckoutSession(orderRef, product, product.price_cents, {
+        sender_name: senderName.trim(),
+        receiver_name: receiverName.trim(),
+        message: message.trim(),
+        product_slug: product.slug || null,
+      });
+    } catch (whopErr) {
+      const paypalEnabled = Boolean(process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET && getPaypalMode());
+      if (paypalEnabled) {
+        const paypalOrder = await createPayPalOrder(orderRef, product, product.price_cents, {
+          sender_name: senderName.trim(),
+          receiver_name: receiverName.trim(),
+          message: message.trim(),
+        });
+        db.prepare('UPDATE orders SET provider_order_id = ? WHERE order_ref = ?').run(paypalOrder.id || orderRef, orderRef);
+        return res.json({
+          orderRef,
+          paymentMethod: 'paypal',
+          paypalOrderId: paypalOrder.id,
+        });
+      }
+      throw whopErr;
+    }
 
     db.prepare('UPDATE orders SET provider_order_id = ? WHERE order_ref = ?').run(checkout.id || checkout.purchase_url || checkout.redirect_url || orderRef, orderRef);
 
@@ -631,4 +693,4 @@ router.get('/status/:orderRef', (req, res) => {
   res.json({ status: order.status });
 });
 
-module.exports = { router, normalizeBaseUrl, verifyWhopSignature };
+module.exports = { router, normalizeBaseUrl, verifyWhopSignature, getPayPalRedirectUrls };
