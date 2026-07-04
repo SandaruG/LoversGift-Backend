@@ -53,38 +53,39 @@ function resolvePaymentMethod(preferredMethod) {
     return requested;
   }
 
-  const whopApiKey = process.env.WHOP_API_KEY || process.env.WHOP_KEY || process.env.WHOP_APIKEY;
-  const whopCompanyId = process.env.WHOP_COMPANY_ID || process.env.WHOP_COMPANY || process.env.WHOP_COMPANYID;
-  const paypalClientId = process.env.PAYPAL_CLIENT_ID || process.env.PAYPAL_ID || process.env.PAYPAL_CLIENT;
-  const paypalClientSecret = process.env.PAYPAL_CLIENT_SECRET || process.env.PAYPAL_SECRET || process.env.PAYPAL_SECRET_KEY;
+  const whopApiKey = process.env.WHOP_API_KEY;
+  const whopCompanyId = process.env.WHOP_COMPANY_ID;
+  const whopWebhookSecret = process.env.WHOP_WEBHOOK_SECRET;
+  const paypalClientId = process.env.PAYPAL_CLIENT_ID;
+  const paypalClientSecret = process.env.PAYPAL_CLIENT_SECRET;
 
-  const whopEnabled = Boolean(whopApiKey && whopCompanyId);
+  const whopEnabled = Boolean(whopApiKey && whopCompanyId && whopWebhookSecret);
   const paypalEnabled = Boolean(paypalClientId && paypalClientSecret);
 
   if (paypalEnabled && !whopEnabled) return 'paypal';
   if (whopEnabled && !paypalEnabled) return 'whop';
   if (!paypalEnabled && !whopEnabled) return 'whop';
 
-  const whopRevenueUsd = parseFloat(process.env.WHOP_REVENUE_USD || '0');
-  const thresholdUsd = parseFloat(process.env.PAYPAL_FALLBACK_THRESHOLD_USD || '200');
-  return whopRevenueUsd >= thresholdUsd ? 'paypal' : 'whop';
+  return 'whop';
 }
 
 function getPaymentConfig() {
-  const whopApiKey = process.env.WHOP_API_KEY || process.env.WHOP_KEY || process.env.WHOP_APIKEY;
-  const whopCompanyId = process.env.WHOP_COMPANY_ID || process.env.WHOP_COMPANY || process.env.WHOP_COMPANYID;
-  const whopWebhookSecret = process.env.WHOP_WEBHOOK_SECRET || process.env.WHOP_SECRET || process.env.WHOP_WEBHOOK;
-  const paypalClientId = process.env.PAYPAL_CLIENT_ID || process.env.PAYPAL_ID || process.env.PAYPAL_CLIENT;
-  const paypalClientSecret = process.env.PAYPAL_CLIENT_SECRET || process.env.PAYPAL_SECRET || process.env.PAYPAL_SECRET_KEY;
+  const whopApiKey = process.env.WHOP_API_KEY;
+  const whopCompanyId = process.env.WHOP_COMPANY_ID;
+  const whopWebhookSecret = process.env.WHOP_WEBHOOK_SECRET;
+  const paypalClientId = process.env.PAYPAL_CLIENT_ID;
+  const paypalClientSecret = process.env.PAYPAL_CLIENT_SECRET;
+  const paypalMode = process.env.PAYPAL_MODE;
 
   const whopEnabled = Boolean(whopApiKey && whopCompanyId && whopWebhookSecret);
-  const paypalEnabled = Boolean(paypalClientId && paypalClientSecret);
+  const paypalEnabled = Boolean(paypalClientId && paypalClientSecret && paypalMode);
+
   return {
     whopEnabled,
     paypalEnabled,
     preferredMethod: resolvePaymentMethod(),
-    thresholdUsd: parseFloat(process.env.PAYPAL_FALLBACK_THRESHOLD_USD || '200'),
-    whopRevenueUsd: parseFloat(process.env.WHOP_REVENUE_USD || '0'),
+    paypalClientId: paypalEnabled ? paypalClientId : null,
+    paypalMode: paypalEnabled ? paypalMode : null,
   };
 }
 
@@ -109,22 +110,21 @@ function verifyWhopSignature(payload, signatureHeader, timestampHeader, secret) 
 }
 
 function paypalBase() {
-  return process.env.PAYPAL_ENV === 'live'
+  const mode = (process.env.PAYPAL_MODE || '').trim().toLowerCase();
+  if (!mode) {
+    throw new Error('PAYPAL_MODE must be set to "live" or "sandbox"');
+  }
+  if (mode !== 'live' && mode !== 'sandbox') {
+    throw new Error('PAYPAL_MODE must be either "live" or "sandbox"');
+  }
+  return mode === 'live'
     ? 'https://api-m.paypal.com'
     : 'https://api-m.sandbox.paypal.com';
 }
 
-function getPayPalRedirectUrls(baseUrl) {
-  const normalizedBase = normalizeBaseUrl(baseUrl || process.env.BASE_URL || process.env.FRONTEND_URL);
-  return {
-    returnUrl: `${normalizedBase}/api/payment/paypal/return`,
-    cancelUrl: `${normalizedBase}/api/payment/paypal/cancel`,
-  };
-}
-
 async function getPayPalToken() {
-  const clientId = process.env.PAYPAL_CLIENT_ID || process.env.PAYPAL_ID || process.env.PAYPAL_CLIENT;
-  const clientSecret = process.env.PAYPAL_CLIENT_SECRET || process.env.PAYPAL_SECRET || process.env.PAYPAL_SECRET_KEY;
+  const clientId = process.env.PAYPAL_CLIENT_ID;
+  const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
     throw new Error('PayPal credentials not configured in environment variables');
@@ -148,7 +148,6 @@ async function getPayPalToken() {
 async function createPayPalOrder(orderRef, product, amountCents, metadata) {
   const token = await getPayPalToken();
   const amountStr = (amountCents / 100).toFixed(2);
-  const { returnUrl, cancelUrl } = getPayPalRedirectUrls(process.env.BASE_URL || process.env.FRONTEND_URL);
   const response = await axios.post(
     `${paypalBase()}/v2/checkout/orders`,
     {
@@ -161,25 +160,14 @@ async function createPayPalOrder(orderRef, product, amountCents, metadata) {
             currency_code: 'USD',
             value: amountStr,
           },
+          custom_id: product.slug || undefined,
         },
       ],
-      payment_source: {
-        paypal: {
-          experience_context: {
-            brand_name: 'LoversGift',
-            landing_page: 'NO_PREFERENCE',
-            user_action: 'PAY_NOW',
-            return_url: `${returnUrl}?orderRef=${orderRef}`,
-            cancel_url: `${cancelUrl}?orderRef=${orderRef}`,
-          },
-        },
-      },
       application_context: {
         brand_name: 'LoversGift',
         shipping_preference: 'NO_SHIPPING',
         user_action: 'PAY_NOW',
       },
-      metadata,
     },
     {
       headers: {
@@ -209,8 +197,8 @@ async function capturePayPalOrder(paypalOrderId) {
 }
 
 async function createWhopCheckoutSession(orderRef, product, amountCents, metadata) {
-  const apiKey = process.env.WHOP_API_KEY || process.env.WHOP_KEY || process.env.WHOP_APIKEY;
-  const companyId = process.env.WHOP_COMPANY_ID || process.env.WHOP_COMPANY || process.env.WHOP_COMPANYID;
+  const apiKey = process.env.WHOP_API_KEY;
+  const companyId = process.env.WHOP_COMPANY_ID;
 
   if (!apiKey || !companyId) {
     throw new Error('Whop credentials not configured in environment variables');
@@ -381,13 +369,10 @@ router.post('/create-order', upload.single('photo'), async (req, res) => {
         message: message.trim(),
       });
       db.prepare('UPDATE orders SET provider_order_id = ? WHERE order_ref = ?').run(paypalOrder.id || orderRef, orderRef);
-      const approvalUrl = paypalOrder.links?.find(link => link.rel === 'approve')?.href || null;
       return res.json({
         orderRef,
         paymentMethod: 'paypal',
         paypalOrderId: paypalOrder.id,
-        approvalUrl,
-        links: paypalOrder.links || [],
       });
     }
 
@@ -395,6 +380,7 @@ router.post('/create-order', upload.single('photo'), async (req, res) => {
       sender_name: senderName.trim(),
       receiver_name: receiverName.trim(),
       message: message.trim(),
+      product_slug: product.slug || null,
     });
 
     db.prepare('UPDATE orders SET provider_order_id = ? WHERE order_ref = ?').run(checkout.id || checkout.purchase_url || checkout.redirect_url || orderRef, orderRef);
@@ -496,10 +482,10 @@ router.get('/paypal/cancel', (req, res) => {
   return res.redirect(`${normalizeBaseUrl(process.env.FRONTEND_URL || process.env.BASE_URL)}?payment=cancel&orderRef=${orderRef || ''}`);
 });
 
-router.post('/whop/webhook', express.json({ type: 'application/json' }), (req, res) => {
+router.post('/whop/webhook', express.raw({ type: 'application/json' }), (req, res) => {
   try {
     const db = getDb();
-    const rawPayload = JSON.stringify(req.body || {});
+    const rawPayload = req.body ? req.body.toString('utf8') : '';
     const signatureHeader = req.get('webhook-signature') || req.get('x-whop-signature');
     const timestampHeader = req.get('webhook-timestamp') || req.get('x-whop-timestamp');
     const secret = process.env.WHOP_WEBHOOK_SECRET;
@@ -508,7 +494,13 @@ router.post('/whop/webhook', express.json({ type: 'application/json' }), (req, r
       return res.status(401).json({ error: 'Invalid webhook signature' });
     }
 
-    const payload = req.body || {};
+    let payload = {};
+    try {
+      payload = JSON.parse(rawPayload || '{}');
+    } catch (parseErr) {
+      return res.status(400).json({ error: 'Invalid webhook payload' });
+    }
+
     const eventType = payload.event || payload.event_type || payload.type || '';
     if (eventType !== 'payment.succeeded' && eventType !== 'payment_paid' && payload?.data?.status !== 'paid') {
       return res.json({ received: true });
