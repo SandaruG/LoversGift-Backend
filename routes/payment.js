@@ -631,4 +631,4 @@ router.get('/status/:orderRef', (req, res) => {
   res.json({ status: order.status });
 });
 
-module.exports = { router, normalizeBaseUrl, verifyWhopSignature, getPayPalRedirectUrls };
+module.exports = { router, normalizeBaseUrl, verifyWhopSignature };
