@@ -52,10 +52,26 @@ const PRODUCT_PAGE_MAP = {
 app.get('/g/:code', (req, res) => {
   const db   = getDb();
   const row  = db.prepare(
-    'SELECT p.slug FROM gifts g LEFT JOIN products p ON p.id = g.product_id WHERE g.code = ?'
-  ).get(req.params.code);
+    'SELECT p.slug FROM gifts g LEFT JOIN products p ON p.id = g.product_id WHERE g.code = ? OR g.short_id = ?'
+  ).get(req.params.code, req.params.code);
 
   const slug     = row?.slug || 'simple-love-note';
+  const filename = PRODUCT_PAGE_MAP[slug] || 'gift-love-note.html';
+  res.sendFile(path.join(__dirname, 'public', filename));
+});
+
+app.get('/gift.html', (req, res) => {
+  const db = getDb();
+  const id = (req.query.id || '').toString();
+  if (!id) {
+    return res.status(400).send('Missing gift id');
+  }
+
+  const row = db.prepare(
+    'SELECT p.slug FROM gifts g LEFT JOIN products p ON p.id = g.product_id WHERE g.short_id = ? OR g.code = ?'
+  ).get(id, id);
+
+  const slug = row?.slug || 'simple-love-note';
   const filename = PRODUCT_PAGE_MAP[slug] || 'gift-love-note.html';
   res.sendFile(path.join(__dirname, 'public', filename));
 });

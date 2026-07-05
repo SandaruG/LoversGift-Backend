@@ -16,7 +16,7 @@ const { getDb } = require('../db/database');
 function normalizeBaseUrl(url) {
   let baseUrl = (url || '').trim();
   if (!baseUrl) {
-    baseUrl = 'http://localhost:3000';
+    baseUrl = 'https://loversgift.netlify.app';
   }
   if (!/^https?:\/\//i.test(baseUrl)) {
     baseUrl = `https://${baseUrl}`;
@@ -57,16 +57,19 @@ function formatGift(row, db) {
     : null;
 
   const baseUrl = normalizeBaseUrl(process.env.BASE_URL || process.env.FRONTEND_URL);
+  const shortId = row.short_id || row.code || row.id;
 
   return {
     id:           row.id,
+    shortId,
     code:         row.code,
-    shareUrl:     `${baseUrl}/g/${row.code}`,
+    shareUrl:     `${baseUrl}/gift.html?id=${shortId}`,
     senderName:   row.sender_name,
     receiverName: row.receiver_name,
     message:      row.message,
     specialDate:  row.special_date,
     theme:        row.theme,
+    extraData:    safeParseJson(row.extra_data),
     photoUrl:     row.photo_path ? `${baseUrl}/gifts/${row.photo_path}` : null,
     product:      product ? { id: product.id, title: product.title, emoji: product.emoji } : null,
     createdAt:    row.created_at,
@@ -75,6 +78,31 @@ function formatGift(row, db) {
     viewCount:    row.view_count,
     paid:         row.paid === 1,
   };
+}
+
+function safeParseJson(value) {
+  if (!value) return {};
+  if (typeof value === 'object') return value;
+  try {
+    return JSON.parse(value);
+  } catch (_err) {
+    return {};
+  }
+}
+
+function generateShortId(db) {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let attempts = 0;
+  while (attempts < 10) {
+    let id = '';
+    for (let i = 0; i < 6; i += 1) {
+      id += chars[Math.floor(Math.random() * chars.length)];
+    }
+    const exists = db.prepare('SELECT 1 FROM gifts WHERE short_id = ?').get(id);
+    if (!exists) return id;
+    attempts += 1;
+  }
+  return nanoid(6);
 }
 
 // ── POST /api/gifts — create a new gift ────────────────────────
@@ -88,6 +116,7 @@ router.post('/', upload.single('photo'), (req, res) => {
     senderName, receiverName, message,
     productId, specialDate,
     theme = 'rose',
+    extraData,
   } = req.body;
 
   // Validation
@@ -111,18 +140,26 @@ router.post('/', upload.single('photo'), (req, res) => {
 
   // Generate unique code and expiry
   const code = nanoid(8);
+  const shortId = generateShortId(db);
   const expiryHours = parseInt(process.env.GIFT_EXPIRY_HOURS) || 24;
   const expiresAt = new Date(Date.now() + expiryHours * 60 * 60 * 1000).toISOString();
 
   const photoPath = req.file ? req.file.filename : null;
+  let parsedExtraData = {};
+  try {
+    parsedExtraData = typeof extraData === 'string' ? JSON.parse(extraData) : extraData || {};
+  } catch (_err) {
+    parsedExtraData = {};
+  }
 
   const result = db.prepare(`
     INSERT INTO gifts
-      (code, product_id, sender_name, receiver_name, message,
-       special_date, theme, photo_path, expires_at, paid)
+      (short_id, code, product_id, sender_name, receiver_name, message,
+       special_date, theme, extra_data, photo_path, expires_at, paid)
     VALUES
-      (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
+    shortId,
     code,
     productId || null,
     senderName.trim(),
@@ -130,19 +167,24 @@ router.post('/', upload.single('photo'), (req, res) => {
     message.trim(),
     specialDate || null,
     theme,
+    JSON.stringify(parsedExtraData),
     photoPath,
     expiresAt,
     0  // paid = false until payment confirmed
   );
 
   const gift = db.prepare('SELECT * FROM gifts WHERE id = ?').get(result.lastInsertRowid);
-  res.status(201).json({ gift: formatGift(gift, db) });
+  res.status(201).json({
+    gift: formatGift(gift, db),
+    shortId,
+    shareUrl: `${normalizeBaseUrl(process.env.BASE_URL || process.env.FRONTEND_URL)}/gift.html?id=${shortId}`,
+  });
 });
 
-// ── GET /api/gifts/:code — fetch gift (no view count bump) ─────
-router.get('/:code', (req, res) => {
+// ── GET /api/gifts/:id — fetch gift by short id (new compact flow) ─
+router.get('/:id', (req, res) => {
   const db = getDb();
-  const gift = db.prepare('SELECT * FROM gifts WHERE code = ?').get(req.params.code);
+  const gift = db.prepare('SELECT * FROM gifts WHERE short_id = ? OR code = ?').get(req.params.id, req.params.id);
 
   if (!gift) return res.status(404).json({ error: 'Gift not found or link has expired' });
 
@@ -153,11 +195,10 @@ router.get('/:code', (req, res) => {
   res.json({ gift: formatGift(gift, db) });
 });
 
-// ── GET /api/gifts/:code/view — open gift (bumps view count) ───
-// Call this when the recipient actually opens and views the gift page
+// ── GET /api/gifts/:code/view — fetch gift + bump view count ───
 router.get('/:code/view', (req, res) => {
   const db = getDb();
-  const gift = db.prepare('SELECT * FROM gifts WHERE code = ?').get(req.params.code);
+  const gift = db.prepare('SELECT * FROM gifts WHERE short_id = ? OR code = ?').get(req.params.code, req.params.code);
 
   if (!gift) return res.status(404).json({ error: 'Gift not found' });
 
@@ -166,9 +207,9 @@ router.get('/:code/view', (req, res) => {
   }
 
   // Increment view count
-  db.prepare('UPDATE gifts SET view_count = view_count + 1 WHERE code = ?').run(req.params.code);
+  db.prepare('UPDATE gifts SET view_count = view_count + 1 WHERE id = ?').run(gift.id);
 
-  const updated = db.prepare('SELECT * FROM gifts WHERE code = ?').get(req.params.code);
+  const updated = db.prepare('SELECT * FROM gifts WHERE id = ?').get(gift.id);
   res.json({ gift: formatGift(updated, db) });
 });
 

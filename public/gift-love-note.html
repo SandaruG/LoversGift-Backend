@@ -967,25 +967,39 @@
 
   // ─── LOAD GIFT ─────────────────────────────────────────────────
   async function loadGift() {
-    let code = '';
+    let id = '';
     try {
       const params = new URLSearchParams(window.location.search);
-      code = params.get('code') || '';
+      id = params.get('id') || '';
 
-      if (!code) {
+      if (!id) {
         const parts = window.location.pathname.split('/').filter(Boolean);
         const gIdx = parts.indexOf('g');
         if (gIdx !== -1 && parts[gIdx + 1]) {
-          code = parts[gIdx + 1];
+          id = parts[gIdx + 1];
         } else if (parts.length) {
-          code = parts[parts.length - 1];
+          id = parts[parts.length - 1];
         }
       }
     } catch (e) {
-      code = '';
+      id = '';
     }
 
     const useDemo = window.location.search.includes('demo');
+    if (useDemo) {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        ['senderName','receiverName','message','theme','expiresAt','code'].forEach(k => {
+          const v = params.get(k);
+          if (v) DEMO_GIFT[k] = v;
+        });
+        const extra = params.get('extraData');
+        if (extra) {
+          try { DEMO_GIFT.extraData = JSON.parse(decodeURIComponent(extra)); }
+          catch (e) { try { DEMO_GIFT.extraData = JSON.parse(extra); } catch(e){} }
+        }
+      } catch (e) { /* ignore */ }
+    }
     const isLocal = !window.location.hostname || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
 
     const showContent = (data) => {
@@ -1001,7 +1015,7 @@
       }, 750);
     };
 
-    if (!code && !useDemo && !isLocal) {
+    if (!id && !useDemo && !isLocal) {
       document.getElementById('loading').classList.add('gone');
       document.getElementById('error-state').classList.add('show');
       return;
@@ -1013,7 +1027,7 @@
         return;
       }
 
-      const resp = await fetch(`${API_BASE}/api/gifts/${encodeURIComponent(code)}/view`);
+      const resp = await fetch(`${API_BASE}/api/gifts/${encodeURIComponent(id)}`);
       const data = await resp.json();
       if (!resp.ok || data.expired || data.error) {
         showContent(DEMO_GIFT);

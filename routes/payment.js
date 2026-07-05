@@ -39,7 +39,7 @@ const upload = multer({
 function normalizeBaseUrl(url) {
   let baseUrl = (url || '').trim();
   if (!baseUrl) {
-    baseUrl = 'http://localhost:3000';
+    baseUrl = 'https://loversgift.netlify.app';
   }
   if (!/^https?:\/\//i.test(baseUrl)) {
     baseUrl = `https://${baseUrl}`;
@@ -287,6 +287,14 @@ async function createWhopCheckoutSession(orderRef, product, amountCents, metadat
 // ── Helper: create the gift after payment confirmed ─────────────
 function activateGift(db, order) {
   const code      = nanoid(8);
+  const shortId   = (() => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let id = '';
+    for (let i = 0; i < 6; i += 1) {
+      id += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return id;
+  })();
   const expiryHrs = parseInt(process.env.GIFT_EXPIRY_HOURS) || 24;
   const expiresAt = new Date(Date.now() + expiryHrs * 60 * 60 * 1000).toISOString();
   const baseUrl   = normalizeBaseUrl(process.env.BASE_URL || process.env.FRONTEND_URL);
@@ -302,10 +310,11 @@ function activateGift(db, order) {
   // Insert the gift row
   db.prepare(`
     INSERT INTO gifts
-      (code, product_id, order_id, sender_name, receiver_name,
+      (short_id, code, product_id, order_id, sender_name, receiver_name,
        message, special_date, theme, extra_data, photo_path, expires_at, paid)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
   `).run(
+    shortId,
     code,
     order.product_id,
     order.id,
@@ -324,9 +333,10 @@ function activateGift(db, order) {
     .run(code, order.id);
 
   return {
+    shortId,
     code,
     expiresAt,
-    shareUrl: `${baseUrl}/g/${code}`,
+    shareUrl: `${baseUrl}/gift.html?id=${shortId}`,
   };
 }
 
@@ -335,12 +345,13 @@ function giftResponse(gift, product) {
   const baseUrl = normalizeBaseUrl(process.env.BASE_URL || process.env.FRONTEND_URL);
   return {
     success:      true,
+    shortId:      gift.shortId,
     giftCode:     gift.code,
-    shareUrl:     `${baseUrl}/g/${gift.code}`,
+    shareUrl:     `${baseUrl}/gift.html?id=${gift.shortId}`,
     expiresAt:    gift.expiresAt,
     product:      product ? { title: product.title, emoji: product.emoji } : null,
-    whatsappUrl:  `https://wa.me/?text=${encodeURIComponent(`💌 I made you something special → ${baseUrl}/g/${gift.code}`)}`,
-    messengerUrl: `fb-messenger://share/?link=${encodeURIComponent(`${baseUrl}/g/${gift.code}`)}`,
+    whatsappUrl:  `https://wa.me/?text=${encodeURIComponent(`💌 I made you something special → ${baseUrl}/gift.html?id=${gift.shortId}`)}`,
+    messengerUrl: `fb-messenger://share/?link=${encodeURIComponent(`${baseUrl}/gift.html?id=${gift.shortId}`)}`,
   };
 }
 

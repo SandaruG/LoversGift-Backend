@@ -1085,30 +1085,57 @@
 
   // ─── LOAD GIFT ────────────────────────────────────────────────
   async function loadGift() {
-    let code = '';
-    const pathParts = window.location.pathname.split('/');
-    const gIdx = pathParts.indexOf('g');
-    if (gIdx !== -1 && pathParts[gIdx + 1]) {
-      code = pathParts[gIdx + 1];
-    } else {
-      code = new URLSearchParams(window.location.search).get('code') || '';
+    let id = '';
+    const params = new URLSearchParams(window.location.search);
+    id = params.get('id') || '';
+
+    if (!id) {
+      const pathParts = window.location.pathname.split('/');
+      const gIdx = pathParts.indexOf('g');
+      if (gIdx !== -1 && pathParts[gIdx + 1]) {
+        id = pathParts[gIdx + 1];
+      }
     }
 
-    if (!code) {
+    if (!id) {
       if (window.location.search.includes('demo')) {
+        try {
+          const params = new URLSearchParams(window.location.search);
+          ['senderName','receiverName','message','theme','expiresAt','specialDate','code'].forEach(k => {
+            const v = params.get(k);
+            if (v) DEMO_GIFT[k] = v;
+          });
+          const extra = params.get('extraData');
+          if (extra) {
+            try { DEMO_GIFT.extraData = JSON.parse(decodeURIComponent(extra)); }
+            catch (e) { try { DEMO_GIFT.extraData = JSON.parse(extra); } catch(e){} }
+          }
+        } catch (e) {}
         giftData = DEMO_GIFT; startExperience(); return;
       }
       goToScene('scene-error'); return;
     }
 
     try {
-      const resp = await fetch(`${API_BASE}/api/gifts/${code}/view`);
+      const resp = await fetch(`${API_BASE}/api/gifts/${encodeURIComponent(id)}`);
       const data = await resp.json();
       if (!resp.ok || data.expired || data.error) { goToScene('scene-error'); return; }
       giftData = data.gift;
       startExperience();
     } catch {
       if (window.location.search.includes('demo')) {
+        try {
+          const params = new URLSearchParams(window.location.search);
+          ['senderName','receiverName','message','theme','expiresAt','specialDate','code'].forEach(k => {
+            const v = params.get(k);
+            if (v) DEMO_GIFT[k] = v;
+          });
+          const extra = params.get('extraData');
+          if (extra) {
+            try { DEMO_GIFT.extraData = JSON.parse(decodeURIComponent(extra)); }
+            catch (e) { try { DEMO_GIFT.extraData = JSON.parse(extra); } catch(e){} }
+          }
+        } catch (e) {}
         giftData = DEMO_GIFT; startExperience();
       } else {
         goToScene('scene-error');

@@ -66,11 +66,12 @@ function setupSchema() {
     );
   `);
 
-  // ── GIFTS — only created after payment confirmed ───────────────
+  // ── GIFTS — short-ID gift storage for clean share links ───────
   db.exec(`
     CREATE TABLE IF NOT EXISTS gifts (
       id            INTEGER PRIMARY KEY AUTOINCREMENT,
-      code          TEXT UNIQUE NOT NULL,
+      short_id      TEXT UNIQUE,
+      code          TEXT UNIQUE,
       product_id    INTEGER REFERENCES products(id),
       order_id      INTEGER REFERENCES orders(id),
       sender_name   TEXT NOT NULL,
@@ -87,12 +88,27 @@ function setupSchema() {
     );
   `);
 
+  ensureGiftColumns();
+
   // Seed products if empty
   const count = db.prepare('SELECT COUNT(*) as n FROM products').get().n;
   if (count === 0) {
     seedProducts();
   } else {
     migrateProductPricing();
+  }
+}
+
+function ensureGiftColumns() {
+  const columns = db.prepare('PRAGMA table_info(gifts)').all();
+  const hasShortId = columns.some((column) => column.name === 'short_id');
+  if (!hasShortId) {
+    db.exec('ALTER TABLE gifts ADD COLUMN short_id TEXT UNIQUE');
+  }
+
+  const hasExtraData = columns.some((column) => column.name === 'extra_data');
+  if (!hasExtraData) {
+    db.exec("ALTER TABLE gifts ADD COLUMN extra_data TEXT DEFAULT '{}'");
   }
 }
 
